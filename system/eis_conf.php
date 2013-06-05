@@ -5,8 +5,8 @@
 // available into global var: $eis
 // upf, May2013
 
-// eis system absolute path (terminated without /)
-$eis["path"]="/Users/upf/Sites/Site/devel/eis";
+// eis folder absolute path (terminated without /)
+$eis["path"]="xxxxx";
 
 // real time timezone
 $eis["timezone"]="Europe/Rome";
@@ -18,9 +18,9 @@ $eis["timeout"]=30;
 $eis["base64"]=true;
 
 // mysql database config
-$eis["dbserver"]="127.0.0.1";
-$eis["user"]="root";
-$eis["password"]="deby21523";
+$eis["dbserver"]="127.0.0.1";	// write mysql server address here 
+$eis["user"]="xxxx";			// write mysql username here
+$eis["password"]="yyyy";		// write mysql password here
 $eis["dbname"]="eis";
 
 // log file name
