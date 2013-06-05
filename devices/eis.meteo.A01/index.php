@@ -64,15 +64,15 @@ if (isset($_REQUEST["realtime"])) {
  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title><?php print $eis_device["ID"];?></title>
-    <script src="RGraph/libraries/RGraph.common.core.js" ></script>
-    <script src="RGraph/libraries/RGraph.common.dynamic.js" ></script>
-    <script src="RGraph/libraries/RGraph.gauge.js" ></script>
-    <script src="RGraph/libraries/RGraph.led.js" ></script>
-    <script src="RGraph/libraries/RGraph.thermometer.js" ></script>
-    <script src="RGraph/libraries/RGraph.vprogress.js" ></script>
+    <script src="../lib/RGraph/libraries/RGraph.common.core.js" ></script>
+    <script src="../lib/RGraph/libraries/RGraph.common.dynamic.js" ></script>
+    <script src="../lib/RGraph/libraries/RGraph.gauge.js" ></script>
+    <script src="../lib/RGraph/libraries/RGraph.led.js" ></script>
+    <script src="../lib/RGraph/libraries/RGraph.thermometer.js" ></script>
+    <script src="../lib/RGraph/libraries/RGraph.vprogress.js" ></script>
     <!--[if lt IE 9]><script src="../excanvas/excanvas.js"></script><![endif]-->
-    <script src="RGraph/libraries/RGraph.common.effects.js" ></script>
-    <script src="jquery.min.js" ></script>
+    <script src="../lib/RGraph/libraries/RGraph.common.effects.js" ></script>
+    <script src="../lib/jquery.min.js" ></script>
     <style>
         td {text-align: center}
     </style>
