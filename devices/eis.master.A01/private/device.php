@@ -4,18 +4,13 @@
 // eis device implementation
 // upf, May2013
 
-// standard includes
-require_once("/etc/eis.conf");
-include("device_conf.php");
-include($eis["path"]."/system/eis_device_lib.php");
-
 
 //////// required functions 
 
 // device initialization function
 // return true on success, false on failure
 function eis_device_init() {
-	global $eis,$eis_device,$eis_device_conf;
+	global $eis_conf,$eis_dev_conf,$eis_dev_status;
 	eis_clear_error();
 	// put specific device initialization code here
 	// in case of error, return eis_error(your_error,your_error_msg)
@@ -27,18 +22,18 @@ function eis_device_init() {
 // exec device specific commands
 // return a return message in standard eis format
 function eis_device_exec($calldata) {
-	global $eis,$eis_device,$eis_device_conf;
+	global $eis_conf,$eis_dev_conf,$eis_dev_status;
 	$callparam=$calldata["param"];
 	switch ($calldata["cmd"]) {
 		case "simulate":
-			if (!array_key_exists("timestamp",$callparam)) return array("error"=>"system:timestampMissing","returnpar"=>array("errordata"=>""));
-			$timestep=$callparam["timestamp"]-$eis_device["status"]["timestamp"];
+			if (!array_key_exists("timestamp",$callparam)) return eis_error_msg("system:parameterMissing","timestamp");
+			$timestep=$callparam["timestamp"]-$eis_dev_status["timestamp"];
 			// update energy in kWh
-			$eis_device["status"]["cenergy1"]= $eis_device["status"]["cenergy1"] + $eis_device["status"]["cpower1"]*$timestep/36000000.0;
+			$eis_dev_status["cenergy1"] = $eis_dev_status["cenergy1"] + $eis_dev_status["cpower1"]*$timestep/36000000.0;
 			// update timestamp
-			$eis_device["status"]["timestamp"]=$callparam["timestamp"];
+			$eis_dev_status["timestamp"]=$callparam["timestamp"];
 			// return updated status
-			return array("error"=>null, "returnpar"=>$eis_device["status"]);
+			return eis_ok_msg($eis_dev_status);
 			break;		
 		// put other commands and related code here
 		// case "mycommand":
@@ -49,7 +44,7 @@ function eis_device_exec($calldata) {
 
 		default:
 			// manage unknown command
-			$returnmsg=array("error"=>"system:unknownCommand","returnpar"=>array("errordata"=>$calldata["cmd"]));
+			$returnmsg=eis_error_msg("system:unknownCommand",$calldata["cmd"]);
 	}
 	return $returnmsg;
 }
@@ -58,18 +53,18 @@ function eis_device_exec($calldata) {
 // process device specific signals
 // return nothing
 function eis_device_signal($calldata) {
-	global $eis,$eis_device,$eis_device_conf;
+	global $eis_conf,$eis_dev_conf,$eis_dev_status;
 	$callparam=$calldata["param"];
 	switch ($calldata["cmd"]) {
 		case "poweron":
-				// set power to the default init value
-				$eis_device["status"]["power"]=true;
-				$eis_device["status"]["cpower1"]=$eis_device_conf["status"]["cpower1"];
+				// power on and set to the default init value
+				$eis_dev_status["power"]=true;
+				$eis_dev_status["cpower1"]=$eis_dev_conf["status"]["cpower1"];
 				break;
 		case "poweroff":
-				// set power to zero
-				$eis_device["status"]["power"]=false;
-				$eis_device["status"]["cpower1"]=0;
+				// power off and set to zero
+				$eis_dev_status["power"]=false;
+				$eis_dev_status["cpower1"]=0;
 				break;
 		// put other signals and related code here
 		// case "mysignal":

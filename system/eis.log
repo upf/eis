@@ -1,6 +1,5 @@
-2013-06-03 17:10:23 -- eis.meteo.A01 -- info -- system:disabled
-2013-06-03 17:10:24 -- eis.meteo.A01 -- info -- system:enabled
-2013-06-03 17:10:26 -- eis.meteo.A01 -- info -- system:disabled
-2013-06-03 17:10:29 -- eis.meteo.A01 -- severe -- system:notEnabled --> 
-2013-06-03 17:10:29 -- eis_system -- severe -- system:notEnabled --> 
-2013-06-03 17:10:37 -- eis.meteo.A01 -- info -- system:enabled
+2013-06-11 09:58:00 -- eis.device_template.A01 -- severe -- system:unknownCommand --> command/signal
+2013-06-11 09:58:00 -- eis_system -- severe -- system:unknownCommand --> command/signal
+2013-06-11 10:13:04 -- eis_system -- severe -- system:callRetData --> <br />
+<b>Parse error</b>:  parse error in <b>/Users/upf/github/eis/system/eis_device_lib.php</b> on line <b>149</b><br />
+

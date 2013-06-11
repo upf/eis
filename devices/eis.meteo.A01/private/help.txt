@@ -1,0 +1,46 @@
+# -- help file for a device --
+# sintax:
+#    comments: lines beginning with a "#" char
+#    sections:  {** your_section_name **}
+#    commands:  [** your_command_name **]
+#    signals :  (** you_signal_name **)
+
+
+
+{**Description**}
+This is a simple meteo station device, able to return a new set of meteo data at each simulation step.
+It is also a small and fixed electrical load.
+Implemented meteo data and units are:
+temperature (Celsius)
+humidity (%)
+windspeed (m/s)
+winddir (degree, 0=NORD)
+pressure (hPa)
+radiation (w/m2)
+
+
+{**Commands**}
+Beside the built-in (predefined) commands, this device implements only the "simulate" mandatory command.
+Use the predefined command "getstatus" to get the meteo data at the current simulation time.
+
+[**simulate**]
+Compute a new meteo data set and store it in the device status.
+input parameters:
+	timestamp (integer, mandatory): the current timestamp for the simulation step
+output parameters:
+	the current status array
+specific errors: none
+
+
+{**Signals**}
+Beside the built-in (predefined) signals, this device implements only the 2 mandatory signals.
+
+(**poweron**)
+Sets the power status to "on" and recomputes the meteo data at the current simulation timestamp.
+input parameters: none
+
+(**poweroff**)
+Sets the power status to "off", sets the power consumed to zero and resets the meteo data to those contained in the device default configuration.
+input parameters: none
+
+

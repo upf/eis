@@ -5,33 +5,33 @@
 // upf, May2013
 
 // required includes
-require_once("/etc/eis.conf");
+require_once("/etc/eis_conf.php");
 include("device_conf.php");
-include($eis["path"]."/system/eis_device_lib.php");
+include($eis_conf["path"]."/system/eis_device_lib.php");
 
 // realtime configuration
-$port=$eis_device["ifport"];
+$port=$eis_dev_conf["ifport"];
 
 // initialization
 $thispage="http://".$_SERVER["SERVER_NAME"].$_SERVER["SCRIPT_NAME"];
-$controlpage="http://".$_SERVER["SERVER_NAME"].str_replace(end(explode('/',$_SERVER["SCRIPT_NAME"])),'',$_SERVER["SCRIPT_NAME"])."control.php";
-date_default_timezone_set($eis["timezone"]);
+$controlurl="http://".$_SERVER["SERVER_NAME"].str_replace(end(explode('/',$_SERVER["SCRIPT_NAME"])),'',$_SERVER["SCRIPT_NAME"]);
+date_default_timezone_set($eis_conf["timezone"]);
 $start=time();
-if (!eis_load_status()) die ($eis["error"]." --> ".$eis["errmsg"]);
-$oldstatus=$eis_device["status"];
+if (!eis_load_status()) die ($eis_conf["error"]." --> ".$eis_conf["errmsg"]);
+$oldstatus=$eis_dev_status;
 
 // process calls from page
 if (isset($_REQUEST["callback"])) {
     if (isset($_REQUEST["enable"]))
         if ($_REQUEST["enable"])
-            eis_call($controlpage,time(),"interface","signal","enable",array(),$returnmsg);
+            eis_call($controlurl,time(),"interface","signal","enable",array(),$returnmsg);
         else
-            eis_call($controlpage,time(),"interface","signal","disable",array(),$returnmsg);
+            eis_call($controlurl,time(),"interface","signal","disable",array(),$returnmsg);
     if (isset($_REQUEST["power"]))
         if ($_REQUEST["power"])
-            eis_call($controlpage,time(),"interface","signal","poweron",array(),$returnmsg);
+            eis_call($controlurl,time(),"interface","signal","poweron",array(),$returnmsg);
         else
-            eis_call($controlpage,time(),"interface","signal","poweroff",array(),$returnmsg);
+            eis_call($controlurl,time(),"interface","signal","poweroff",array(),$returnmsg);
     die();
 }
 
@@ -46,9 +46,9 @@ if (isset($_REQUEST["realtime"])) {
         socket_recvfrom($socket, $d, 6, 0, $a,$p);
         // send realtime data if any
         if ($d=="reload") {
-            if (!eis_load_status()) die ($eis["error"]." --> ".$eis["errmsg"]);
+            if (!eis_load_status()) die ($eis_conf["error"]." --> ".$eis_conf["errmsg"]);
             $changed=array();
-            foreach($eis_device["status"] as $key=>$value) if ($value!=$oldstatus[$key]) $changed[$key]=$value;
+            foreach($eis_dev_status as $key=>$value) if ($value!=$oldstatus[$key]) $changed[$key]=$value;
             print json_encode($changed);
             break;
         }
@@ -63,7 +63,7 @@ if (isset($_REQUEST["realtime"])) {
 <html>
  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title><?php print $eis_device["ID"];?></title>
+    <title><?php print $eis_dev_conf["ID"];?></title>
     <script src="../lib/RGraph/libraries/RGraph.common.core.js" ></script>
     <script src="../lib/RGraph/libraries/RGraph.common.dynamic.js" ></script>
     <script src="../lib/RGraph/libraries/RGraph.gauge.js" ></script>
@@ -79,7 +79,7 @@ if (isset($_REQUEST["realtime"])) {
  </head>
     <body>
 
-    <h1><?php print $eis_device["ID"];?></h1>
+    <h1><?php print $eis_dev_conf["ID"];?></h1>
     <h2><div id='s_time'></div></h2>
     <h2><div id='status'></div></h2>
  
@@ -118,17 +118,17 @@ if (isset($_REQUEST["realtime"])) {
     // fill page for the first time
 
     // enable/disable status
-    document.getElementById('status').innerHTML = '(<?php if ($eis_device["status"]["enabled"]) print "enabled"; else print "<font color=red>disabled</font>";?>)';
+    document.getElementById('status').innerHTML = '(<?php if ($eis_dev_status["enabled"]) print "enabled"; else print "<font color=red>disabled</font>";?>)';
 
     // simulation time
-    document.getElementById('s_time').innerHTML = getfdate(<?php print $eis_device["status"]["timestamp"];?>);
+    document.getElementById('s_time').innerHTML = getfdate(<?php print $eis_dev_status["timestamp"];?>);
 
     // on/off status
-    document.getElementById('switch').innerHTML = '<img width="80" height="30" src=<?php if ($oldstatus["power"]) $img="on.png"; else $img="off.png";print $img;?> >';
+    document.getElementById('switch').innerHTML = '<img width="80" height="30" src=<?php if ($oldstatus["power"]) $img="images/on.png"; else $img="images/off.png";print $img;?> >';
 
     // current power gauge
     var p1=<?php print $oldstatus["cpower1"];?>;
-    var gauge1 = new RGraph.Gauge('power', 0, <?php print $eis_device["cpower1"];?>, p1);
+    var gauge1 = new RGraph.Gauge('power', 0, <?php print $eis_dev_conf["cpower1"];?>, p1);
     //gauge1.Set('chart.title', 'current power');
     gauge1.Set('chart.red.start','150');
     gauge1.Set('chart.green.end','100');
@@ -158,7 +158,7 @@ if (isset($_REQUEST["realtime"])) {
                     document.getElementById('status').innerHTML = "("+status+")";
                     break;
                 case "power":
-                    if (d[i]) img="on.png"; else img="off.png"; 
+                    if (d[i]) img="images/on.png"; else img="images/off.png"; 
                     document.getElementById('switch').innerHTML = '<img width="80" height="30" src="' + img + '">';
                     break;
                  case "cpower1":

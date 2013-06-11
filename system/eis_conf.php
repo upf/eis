@@ -6,33 +6,36 @@
 // upf, May2013
 
 // eis folder absolute path (terminated without /)
-$eis["path"]="xxxxx";
+$eis_conf["path"]="xxxxx";
 
 // real time timezone
-$eis["timezone"]="Europe/Rome";
+$eis_conf["timezone"]="Europe/Rome";
 
-// device call timeout (seconds)
-$eis["timeout"]=30;
+// device alive timeouts (seconds)
+$eis_conf["atimeout"]=2;
+
+// device call timeouts (seconds)
+$eis_conf["timeout"]=30;
 
 // use base64 encoding/decoding (set to false only during debug)
-$eis["base64"]=true;
+$eis_conf["base64"]=true;
 
 // mysql database config
-$eis["dbserver"]="127.0.0.1";	// write mysql server address here 
-$eis["user"]="xxxx";			// write mysql username here
-$eis["password"]="yyyy";		// write mysql password here
-$eis["dbname"]="eis";
+$eis_conf["dbserver"]="127.0.0.1";	// write mysql server address here 
+$eis_conf["user"]="xxxx";			// write mysql username here
+$eis_conf["password"]="yyyy";		// write mysql password here
+$eis_conf["dbname"]="eis";
 
 // log file name
-$eis["logfile"]=$eis["path"]."/system/eis.log";
+$eis_conf["logfile"]=$eis_conf["path"]."/system/eis.log";
 
 
 // placeholders for system internal variables
 // values will change during execution
 
 // last error code and message init values
-$eis["error"]=false;
-$eis["errmsg"]="";
+$eis_conf["error"]=false;
+$eis_conf["errmsg"]="";
 
 
 

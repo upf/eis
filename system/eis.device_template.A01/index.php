@@ -35,7 +35,7 @@ if (isset($_REQUEST["callback"])) {
     die();
 }
 
-// listen for reload on a socket server and send changed status values to the page as Json array
+// listen for reload on a socket server and send changed status values as Json array
 if (isset($_REQUEST["realtime"])) {
     // init UDP server
     $socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP); 
@@ -63,7 +63,7 @@ if (isset($_REQUEST["realtime"])) {
 <html>
  <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title><?php print $eis_device["ID"];?></title>
+    <title><?php print $eis_dev_conf["ID"];?></title>
     <script src="../lib/RGraph/libraries/RGraph.common.core.js" ></script>
     <script src="../lib/RGraph/libraries/RGraph.common.dynamic.js" ></script>
     <script src="../lib/RGraph/libraries/RGraph.gauge.js" ></script>
@@ -79,14 +79,14 @@ if (isset($_REQUEST["realtime"])) {
  </head>
     <body>
 
-    <h1><?php print $eis_device["ID"];?></h1>
+    <h1><?php print $eis_dev_conf["ID"];?></h1>
     <h2><div id='s_time'></div></h2>
     <h2><div id='status'></div></h2>
  
     <table style="width:70%">
     <tr>
         <td><canvas id="power" width="200" height="200">[No canvas support]</canvas></td>
-        <td><div id="switch"></div></td>
+        <td><div id='switch'></div></td>
         <td>
             <form><input type="button" value="on" onClick="sendback('power','1')" /></form>
             <br>
@@ -104,12 +104,6 @@ if (isset($_REQUEST["realtime"])) {
         <td>power on/off</td>
         <td>enable/disable</td>
     </tr>
-    <tr>
-        <td><canvas id="temperature" width="80" height="350">[No canvas support]</canvas></td>
-        <td><canvas id="humidity" width="80" height="350">[No canvas support]</canvas></td>
-        <td><canvas id="barometer" width="80" height="350">[No canvas support]</canvas></td>
-        <td><canvas id="radiation" width="80" height="350">[No canvas support]</canvas></td>
-   </tr>
     </table>
     
     <br>
@@ -136,28 +130,12 @@ if (isset($_REQUEST["realtime"])) {
     var p1=<?php print $oldstatus["cpower1"];?>;
     var gauge1 = new RGraph.Gauge('power', 0, <?php print $eis_dev_conf["cpower1"];?>, p1);
     //gauge1.Set('chart.title', 'current power');
-    gauge1.Set('chart.red.start','10');
-    gauge1.Set('chart.green.end','5');
+    gauge1.Set('chart.red.start','150');
+    gauge1.Set('chart.green.end','100');
     gauge1.Set('chart.green.color','green');
     gauge1.Set('chart.red.color','red');
     // animate gauge (to remove the effect substitute with gauge1.Draw());
     RGraph.Effects.Gauge.Grow(gauge1);
-
-    // temperature
-    var thermo=<?php print $oldstatus["temperature"];?>;
-    var thermometer = new RGraph.Thermometer('temperature', -10,50,thermo);
-    var grad = thermometer.context.createLinearGradient(15,0,85,0);
-    grad.addColorStop(0,'green');
-    grad.addColorStop(0.5,'#9f9');
-    grad.addColorStop(1,'green');
-    thermometer.Set('chart.colors', [grad]);
-    thermometer.Set('chart.title.side', 'Temperature');
-    thermometer.Set('chart.scale.visible', true);
-    thermometer.Set('chart.scale.decimals', 1);
-    thermometer.Set('chart.gutter.right', 25);
-    // animate level (to remove the effect substitute with thermometer.Draw());
-    RGraph.Effects.Thermometer.Grow(thermometer);
-
    
 </script>
 
@@ -186,10 +164,6 @@ if (isset($_REQUEST["realtime"])) {
                  case "cpower1":
                     gauge1.value=d[i];
                     RGraph.Effects.Gauge.Grow(gauge1);                    
-                    break;
-                 case "temperature":
-                    thermometer.value=d[i];
-                    RGraph.Effects.Thermometer.Grow(thermometer);                    
                     break;
            }
     }
