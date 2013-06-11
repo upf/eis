@@ -24,7 +24,7 @@ Apache2, PHP 5.2.x, mySQL<br>
 	<i>Linux   -->  /home/...yourname.../github/eis</i><br>
 2) make a copy as follows:<br>
 	<i>MacOSX  -->  sudo cp /Users/...yourname.../github/eis/system/eis_conf.php /etc/eis_conf.php</i><br>
-	<i>Linux   -->  sudo cp /home/...yourname.../github/eis/system/eis_conf.php /etc/eis_conf.ph</i><br>
+	<i>Linux   -->  sudo cp /home/...yourname.../github/eis/system/eis_conf.php /etc/eis_conf.php</i><br>
 3) check Apache2, set FollowsSymLinks and AllowOverride in the web root directory<br>
 4) make a symbolic link as follows:<br>
 	<i>MacOSX  -->  sudo ln -s /Users/...yourname.../github/eis/devices /Library/WebServer/Documents/eis</i><br>

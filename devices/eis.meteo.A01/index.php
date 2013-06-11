@@ -6,7 +6,7 @@
 
 // required includes
 require_once("/etc/eis_conf.php");
-include("device_conf.php");
+include("private/device_conf.php");
 include($eis_conf["path"]."/system/eis_device_lib.php");
 
 // realtime configuration
@@ -14,7 +14,8 @@ $port=$eis_dev_conf["ifport"];
 
 // initialization
 $thispage="http://".$_SERVER["SERVER_NAME"].$_SERVER["SCRIPT_NAME"];
-$controlurl="http://".$_SERVER["SERVER_NAME"].str_replace(end(explode('/',$_SERVER["SCRIPT_NAME"])),'',$_SERVER["SCRIPT_NAME"]);
+$n=explode('/',$_SERVER["SCRIPT_NAME"]);
+$controlurl="http://".$_SERVER["SERVER_NAME"].str_replace(end($n),'',$_SERVER["SCRIPT_NAME"]);
 date_default_timezone_set($eis_conf["timezone"]);
 $start=time();
 if (!eis_load_status()) die ($eis_conf["error"]." --> ".$eis_conf["errmsg"]);
@@ -79,7 +80,7 @@ if (isset($_REQUEST["realtime"])) {
  </head>
     <body>
 
-    <h1><?php print $eis_device["ID"];?></h1>
+    <h1><?php print $eis_dev_conf["ID"];?></h1>
     <h2><div id='s_time'></div></h2>
     <h2><div id='status'></div></h2>
  

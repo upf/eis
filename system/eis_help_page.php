@@ -13,13 +13,13 @@
 
 // print headers
 print "<h1>".$eis_dev_conf["ID"]."</h1>\n";
-print "<i>version: ".$eis_dev_conf["version"]."&nbsp&nbsp date: ".$eis_dev_conf["date"].
-        "&nbsp&nbsp author: ".$eis_dev_conf["author"]."\n";
+print "<i><b>".$eis_dev_conf["description"].":</b>&nbsp&nbsp version: ".$eis_dev_conf["version"]."&nbsp&nbsp date: ".$eis_dev_conf["date"].
+        "&nbsp&nbsp author: ".$eis_dev_conf["author"]."&nbsp&nbsp class: ".$eis_dev_conf["class"]."&nbsp&nbsp type: ".$eis_dev_conf["type"]."\n";
 
 
 // check if an help file exists
 if (!file_exists($eis_dev_conf["path"]."/private/help.txt"))
-    die("<b>no help available</b>");
+    die("<br><br><b>no help available</b>");
 
 // print help in standard format
 $help=file($eis_dev_conf["path"]."/private/help.txt");

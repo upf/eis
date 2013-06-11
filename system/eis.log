@@ -1,5 +1,43 @@
-2013-06-11 09:58:00 -- eis.device_template.A01 -- severe -- system:unknownCommand --> command/signal
-2013-06-11 09:58:00 -- eis_system -- severe -- system:unknownCommand --> command/signal
-2013-06-11 10:13:04 -- eis_system -- severe -- system:callRetData --> <br />
-<b>Parse error</b>:  parse error in <b>/Users/upf/github/eis/system/eis_device_lib.php</b> on line <b>149</b><br />
-
+2013-06-11 15:19:13 -- eis.meteo.A01 -- info -- system:disabled
+2013-06-11 15:19:17 -- eis.meteo.A01 -- severe -- system:notEnabled --> 
+2013-06-11 15:19:17 -- eis_system -- severe -- system:notEnabled --> 
+2013-06-11 15:19:45 -- eis.meteo.A01 -- info -- system:enabled
+2013-06-11 15:23:05 -- eis.meteo.A01 -- info -- system:enabled
+2013-06-11 15:25:44 -- eis.master.A01 -- severe -- system:unknownCommand --> command/signal
+2013-06-11 15:25:44 -- eis.master.A01 -- severe -- system:unknownCommand --> command/signal
+2013-06-11 15:37:00 -- eis.meteo.A01 -- info -- system:disabled
+2013-06-11 15:37:03 -- eis.meteo.A01 -- severe -- system:notEnabled --> 
+2013-06-11 15:37:03 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 15:37:06 -- eis.meteo.A01 -- info -- system:enabled
+2013-06-11 15:52:06 -- eis.master.A01 -- severe -- system:unknownCommand --> get
+2013-06-11 15:52:06 -- eis.master.A01 -- severe -- system:unknownCommand --> get
+2013-06-11 15:58:07 -- eis.master.A01 -- info -- system:disabled
+2013-06-11 15:58:28 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 15:58:28 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 15:58:48 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 15:58:48 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 15:58:59 -- eis.master.A01 -- info -- system:enabled
+2013-06-11 16:23:36 -- eis.meteo.A01 -- info -- system:disabled
+2013-06-11 16:25:21 -- eis.meteo.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:25:21 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:36:53 -- eis.meteo.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:36:53 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:37:28 -- eis.meteo.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:37:28 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:37:59 -- eis.meteo.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:37:59 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:39:20 -- eis.meteo.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:39:20 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:39:34 -- eis.meteo.A01 -- info -- system:enabled
+2013-06-11 16:39:50 -- eis.meteo.A01 -- info -- system:disabled
+2013-06-11 16:39:55 -- eis.meteo.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:39:55 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:39:58 -- eis.meteo.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:39:58 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:41:30 -- eis.meteo.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:41:30 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:41:50 -- eis.meteo.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:41:50 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:42:05 -- eis.meteo.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:42:05 -- eis.master.A01 -- severe -- system:notEnabled --> 
+2013-06-11 16:42:14 -- eis.meteo.A01 -- info -- system:enabled

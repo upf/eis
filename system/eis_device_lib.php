@@ -70,11 +70,12 @@ function eis_default_status() {
 function eis_exec($calldata) {
 	global $eis_conf,$eis_dev_conf,$eis_dev_status;
 	$callparam=$calldata["param"];
-	if ($calldata["cmd"]!="init") {
+	// if init do not load status
+	if ($calldata["cmd"]!="init") 
 		if (!eis_load_status()) return eis_error_msg($eis_conf["error"],$eis_conf["errmsg"]);
-		// check if device is enabled
-		if (!$eis_dev_status["enabled"]) return eis_error_msg("system:notEnabled","");
-	}
+	// check if device is enabled
+	if (!$eis_dev_status["enabled"] and $calldata["cmd"]!="init") return eis_error_msg("system:notEnabled","");
+	// process command
 	switch ($calldata["cmd"]) {
 		// ping command: does nothing and returns the calling parameters
 		case "ping":
@@ -137,9 +138,11 @@ function eis_exec($calldata) {
 			break;
 		// help command: returns the device help (if any) in a field named "help"
 		case "help":
+			$hstr="\n**** General ****\nversion: ".$eis_dev_conf["version"]."\ndate: ".$eis_dev_conf["date"].
+				"\nauthor: ".$eis_dev_conf["author"]."\nclass: ".$eis_dev_conf["class"].
+				"\ntype: ".$eis_dev_conf["type"]."\ndescription: ".$eis_dev_conf["description"]."\n";
 			if (file_exists($eis_dev_conf["path"]."/private/help.txt")) {
 				$help=file($eis_dev_conf["path"]."/private/help.txt");
-				$hstr="\nversion: ".$eis_dev_conf["version"]."   date: ".$eis_dev_conf["date"]."   author: ".$eis_dev_conf["author"]."\n";
  				foreach ($help as $line) {
     				$line=ltrim($line);
     				if ($line[0]=="#") continue;
@@ -153,7 +156,7 @@ function eis_exec($calldata) {
     			}
 			}
 			else
-				$hstr="no help available\n";
+				$hstr=$hstr."\nno further help available\n";
 			$returnmsg=eis_ok_msg(array("help"=>$hstr));
 			break;
 		// other device specific commands

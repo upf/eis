@@ -18,6 +18,7 @@
 // required includes
 require_once("/etc/eis_conf.php");
 include($eis_conf["path"]."/system/eis_system_lib.php");
+include("private/device_conf.php");
 
 // check GET parameters
 if (isset($_REQUEST["device"])) $device=$_REQUEST["device"]; else $device="";
@@ -61,14 +62,14 @@ if ($device!="") {
     // exec call
     if (!eis_call(geturl($device),time(),geturl($eis_dev_conf["ID"]),$type,$cmd,$param,$returnmsg)) {
         print "<h3>call ERROR</h3>\n";
-        print "<b>error code: ".$eis_conf["error"]."</b><br><br>\n";
+        print "<b>error code:</b>&nbsp <i>".$eis_conf["error"]."</i><br><br>\n";
         print "<b>error message: </b><br>";
-        print nl2br(print_r($eis_conf["errmsg"],true))."<br>";
+        print "<i>".nl2br(print_r($eis_conf["errmsg"],true))."</i><br>";
     }
     else {
         print "<h3>call OK</h3>";
         print "<b>return parameters:</b><br>\n";
-        print nl2br(print_r($returnmsg["returnpar"],true));
+        print "<i>".nl2br(print_r($returnmsg["returnpar"],true))."</i>\n";
     }
     // print execution time
     $delay=1000*(microtime(true)-$mtime);
