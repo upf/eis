@@ -18,7 +18,6 @@ The simulator is in development, working devices can be written and tested.<br>
 <b>Requirements:</b><br>
 Apache2, PHP 5.2.x, mySQL<br>
 
-<b>Installation:</b><br></b><br>
 <b>Installation:</b><br>
 1) Clone the entire github directory, usually a github folder in your home directory:<br>
 	<i>MacOSX  -->  /Users/<yourname>/github/eis</i><br>
@@ -45,9 +44,8 @@ The first lines of output should be something like these:<br>
 	[ID] => eis.meteo.A01<br>
 	.....<br>
 Remember that to begin to use a device for the first time, the "init" command must be used before any other call or when
-the indexes of the status array change (e.g. add, remove or rename a status variable).<br><br>
 the indexes of the status array change (e.g. add, remove or rename a status variable).<br>
 
 <b>More info:</b><br>
-Visit the directory "doc" inside the eis folder.
+Visit the directory "doc" inside the eis folder.<br>
 
