@@ -1,14 +1,11 @@
-eis
-===
-
 eis didactic SmartHome electrical simulator
 -------------------------------------------
 
-Description:
-------------
+<b>Description:</b>
 This scripts implements a simple electrical simulator of a SmartHome, where loads (cookers,washing machines, etc),
 generators (PV, wind, etc.) and electrical storages (ups, etc.) can be present in a 3-phase or 1-phase configuration.
 The simulator is written in PHP without object-oriented programming since the students had only a basic knowledge of C.
+<br>
 It is based on HTTP and REST approach using JSON associative array. Also an advanced interface is available using
 an interactive approach similar to the BOSH technology (PHP, UDP client-server, Javascript, HTML) in order to have
 the HTML interface changed in realtime when an event happens. RGraph/jquery is used for widgets.
