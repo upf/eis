@@ -1,7 +1,6 @@
 eis
 ===
 
-<<<<<<< HEAD
 eis didactic SmartHome electrical simulator
 -------------------------------------------
 
@@ -54,4 +53,3 @@ the indexes of the status array change (e.g. add, remove or rename a status vari
 More info:
 Visit the directory "doc" inside the eis folder.
 =======
->>>>>>> 2089e8a5018d937ca2e6a11e63e3c13825fc4fb6
