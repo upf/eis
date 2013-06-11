@@ -9,8 +9,8 @@ It is based on HTTP and REST approach using JSON associative array. Also an adva
 an interactive approach similar to the BOSH technology (PHP, UDP client-server, Javascript, HTML) in order to have
 the HTML interface changed in realtime when an event happens. RGraph/jquery is used for widgets.
 
-<b>Tested OS's:<b><br>
-MacOSX Mountain Lion, Ubuntu Linux 12.04
+<b>Tested OS's:</b><br>
+MacOSX Mountain Lion, Ubuntu Linux 12.04<br>
 
 <b>Status:</b><br>
 The simulator is in development, working devices can be written and tested.<br>
@@ -18,18 +18,17 @@ The simulator is in development, working devices can be written and tested.<br>
 <b>Requirements:</b><br>
 Apache2, PHP 5.2.x, mySQL<br>
 
-
 <b>Installation:</b><br></b><br>
 1) Clone the entire github directory, usually a github folder in your home directory:<br>
-	MacOSX  -->  /Users/<yourname>/github/eis<br>
-	Linux   -->  /home/<yourname>/github/eis<br>
+	<i>MacOSX  -->  /Users/<yourname>/github/eis</i><br>
+	<i>Linux   -->  /home/<yourname>/github/eis</i><br>
 2) make a copy as follows:<br>
-	MacOSX  -->  sudo cp /Users/<yourname>/github/eis/system/eis_conf.php /etc/eis_conf.php<br>
-	Linux   -->  sudo cp /home/<yourname>/github/eis/system/eis_conf.php /etc/eis_conf.ph<br>
-3) check Apache2, set FollowsSymLinks and AllowOverride in the web root directory<br><br>
+	<i>MacOSX  -->  sudo cp /Users/<yourname>/github/eis/system/eis_conf.php /etc/eis_conf.php</i><br>
+	<i>Linux   -->  sudo cp /home/<yourname>/github/eis/system/eis_conf.php /etc/eis_conf.ph</i><br>
+3) check Apache2, set FollowsSymLinks and AllowOverride in the web root directory<br>
 4) make a symbolic link as follows:<br>
-	MacOSX  -->  sudo ln -s /Users/<yourname>/github/eis/devices /Library/WebServer/Documents/eis<br>
-	Linux   -->  sudo ln -s /home/<yourname>/github/eis/devices /var/www/eis<br>
+	<i>MacOSX  -->  sudo ln -s /Users/<yourname>/github/eis/devices /Library/WebServer/Documents/eis</i><br>
+	<i>Linux   -->  sudo ln -s /home/<yourname>/github/eis/devices /var/www/eis</i><br>
 5) create a mySQL database named "eis", and import the file eis.sql in the "system" directory inside the eis folder<br>
 6) edit the file /etc/eis_conf.php and fill the required fields (read comments).<br>
 
