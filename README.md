@@ -33,7 +33,7 @@ On MacosX Apache2 and PHP are already present but must be enabled and configured
 
 <b>Update installation:</b><br>
 1) Clone the entire github directory in the same directory you used the first time installation:<br>
-2) visit http://<your_ip>/eis with a browser and follow instructions (run installer again if requested)
+2) visit http://...your_ip.../eis with a browser and follow instructions (run installer again if requested)
 
 <b>System check:</b><br>
 If installation was correct, check the system by visiting the page http://...your_ip.../eis<br>
