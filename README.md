@@ -29,14 +29,14 @@ On MacosX Apache2 and PHP are already present but must be enabled and configured
 	<i>Linux   -->  cd /home/...yourname.../github/eis/bin</i><br>
 	<i>sudo ./install  your_root_mysql_username  your_root_mysql_password</i><br>
 3) follow installer instructions<br>
-4) when successfully installed, visit http://<your_ip>/eis with a browser
+4) when successfully installed, visit http://...your_ip.../eis with a browser
 
 <b>Update installation:</b><br>
 1) Clone the entire github directory in the same directory you used the first time installation:<br>
 2) visit http://<your_ip>/eis with a browser and follow instructions (run installer again if requested)
 
 <b>System check:</b><br>
-If installation was correct, check the system by visiting the page http://<your_ip>/eis<br>
+If installation was correct, check the system by visiting the page http://...your_ip.../eis<br>
 Using the console write: "eis.master exec ping test 55" and press Enter.<br>
 The first lines of output should be something like these:<br>
 	<i>call OK:<br>
