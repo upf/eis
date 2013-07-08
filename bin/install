@@ -1,0 +1,93 @@
+#!/usr/bin/php -q
+<?php
+
+// **** EIS ****
+// eis system installer
+// upf, Jun2013
+
+// set script constants
+$header="eis system installer ver. 0.0.1 (jun2013, upf)\n   --> ";
+$footer="\n\n";
+$host="localhost";
+$eisdb="eis";
+$eisdb_user="eis";
+$eisdb_passwd=uniqid();
+$targetdir="/etc";
+$wwwdir_mac="/Library/WebServer/Documents";
+$wwwdir_linux="/var/www";
+
+// check and set required command line parameters
+if (sizeof($argv)<3) die($header."usage:  ".basename($argv[0])."  <mysql_root_username>  <mysql_root_password>".$footer);
+$mysql_user=$argv[1];
+$mysql_passwd=$argv[2];
+
+// determine the running OS (Caution: this could break in the future!)  
+$osname=php_uname("s");
+if ($osname=="Darwin") $wwwdir=$wwwdir_mac; else $wwwdir=$wwwdir_linux;
+
+// get eis directory
+$eis_dir=substr(dirname(__FILE__),0,-4);
+
+// check if the script is executing as root
+$user=exec("whoami");
+if ($user!="root") die ($header."this script must be executed as root".$footer);
+
+// check if the web server is alive
+$port=80;
+if (($st=@fsockopen($host,$port,$errno,$errstr,2))===false) 
+	die ($header."no web server found at http://$host port $port".$footer);
+else
+	fclose($st);
+
+// check if the mysql server is alive and root username,password correct
+$mysqli=new mysqli($host,$mysql_user,$mysql_passwd);
+if ($mysqli->connect_errno) die ($header."cannot connect to mysql server: ".$mysqli->connect_error.$footer);
+
+// create eis db if not exists
+$mysqli->query("DROP DATABASE $eisdb");
+if (!$mysqli->query("CREATE DATABASE $eisdb")) die ($header."cannot create eis database: ".$mysqli->error.$footer);
+
+// create eis user if not exists and grant privileges on eis db
+@$mysqli->query("DROP USER '$eisdb_user'@'$host'");
+if (!$mysqli->query("CREATE USER '$eisdb_user'@'$host' IDENTIFIED BY '$eisdb_passwd'"))
+	die ($header."cannot create eis user: ".$mysqli->error.$footer);
+if (!$mysqli->query("GRANT ALL PRIVILEGES ON $eisdb . * TO '$eisdb_user'@'$host' IDENTIFIED BY '$eisdb_passwd'"))
+	die ($header."cannot grant privileges to eis user: ".$mysqli->error.$footer);
+
+// close mysql connection as root and reopen it as eis user
+$mysqli->close();
+$mysqli=new mysqli($host,$eisdb_user,$eisdb_passwd,$eisdb);
+if ($mysqli->connect_errno) die ($header."cannot connect to eis DB as eis user: ".$mysqli->connect_error.$footer);
+
+// fill eis database executing any required mysql command
+$statements=explode(";",file_get_contents("$eis_dir/system/eis.sql"));
+foreach ($statements as $query) {
+	$query=trim($query);
+	if ($query=="") continue;
+	if (!$mysqli->query($query))
+		die ($header."cannot execute statement: ".$mysqli->error.$footer);
+}
+
+// copy config file eis_conf.php to targetdir setting the required fields
+$config=file("$eis_dir/system/eis_conf.php");
+$newconfig="";
+foreach ($config as $line) {
+	if (strpos($line,'$eis_conf["path"]')!==false) {$newconfig=$newconfig.'$eis_conf["path"]="'."$eis_dir\";\n"; continue;}
+	if (strpos($line,'$eis_conf["dbserver"]')!==false) {$newconfig=$newconfig.'$eis_conf["dbserver"]="'."$host\";\n"; continue;}
+	if (strpos($line,'$eis_conf["user"]')!==false) {$newconfig=$newconfig.'$eis_conf["user"]="'."$eisdb_user\";\n"; continue;}
+	if (strpos($line,'$eis_conf["password"]')!==false) {$newconfig=$newconfig.'$eis_conf["password"]="'."$eisdb_passwd\";\n"; continue;}
+	if (strpos($line,'$eis_conf["dbname"]')!==false) {$newconfig=$newconfig.'$eis_conf["dbname"]="'."$eisdb\";\n"; continue;}
+	$newconfig=$newconfig.$line;
+}
+if (file_put_contents("$targetdir/eis_conf.php",$newconfig)===false) die($header."cannot create $targetdir/eis_conf.php".$footer);
+if (system("chmod 644 $targetdir/eis_conf.php")===false) die($header."cannot change permission on $targetdir/eis_conf.php".$footer);
+
+// create a symbolic link into the document root directory
+if (file_exists("$wwwdir/eis")) exec("rm $wwwdir/eis");
+if (system("ln -s $eis_dir/devices $wwwdir/eis")===false) die($header."cannot create symbolic link into $wwwdir".$footer);
+
+// installation finished, exit
+print $header."system successfully installed on $osname, open http://$host/eis to install devices".$footer;
+
+
+?>

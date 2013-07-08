@@ -9,48 +9,100 @@
 date_default_timezone_set($eis_conf["timezone"]);
 
 
+//////// mysql management
+
+// open database connection
+$eis_mysqli = new mysqli($eis_conf["dbserver"],$eis_conf["user"],$eis_conf["password"],$eis_conf["dbname"]);
+if ($eis_mysqli->connect_errno) die("system:databaseFailure -- ".$eis_mysqli->connect_error);
+
+// execute mysql statements contained into the passed file (usually a mysql dump file)
+// return true on success, false on failure
+function eis_mysql_exec($dumpfile) {
+	global $eis_mysqli;
+	eis_clear_error();
+	$statements=explode(";",file_get_contents($dumpfile));
+	foreach ($statements as $query) {
+		$query=trim($query);
+		if ($query=="") continue;
+		if (!$eis_mysqli->query($query))
+			return eis_error("system:cannotQueryDatabase",$eis_mysqli->error);
+	}
+}
+
+
+//////// system functions
+
+// return on array of local devices information or false on failure
+// $mode=="all" return all devices, else only installed devices are returned
+function eis_getdevices($mode) {
+	global $eis_mysqli;
+	eis_clear_error();
+	$devdb=array();
+	if (!($result=$eis_mysqli->query("SELECT * FROM devices"))) return eis_error("system:cannotReadDatabase",$eis_mysqli->error);
+	while ($data=$result->fetch_array(MYSQLI_ASSOC)) {
+		if ($mode!="all" and $data["installed"]!="yes") continue;
+		$devdb[$data["id"]]=$data;
+	}
+	return $devdb;
+}
 
 //////// log functions
 
 // logger function, level=0 fatal (exit script)  level=1 severe  level=2 warning  level=3 info 
 function eis_log($level,$description) {
-	global $eis_conf, $eis_dev_conf;
+	global $eis_conf,$eis_dev_conf,$eis_mysqli;
 	if (isset($eis_dev_conf)) $from=$eis_dev_conf["ID"]; else $from="eis_system";
 	$strlevel=array("fatal","severe","warning","info");
-	// put here everything is needed instead of printing
+	// write log to database
+	$query="INSERT INTO log VALUES (".time().",'$from','".$strlevel[$level]."','$description')";
+	if (!$eis_mysqli->query($query)) die("system:cannotLog \"$description\": ".$eis_mysqli->error);
+	// if fatal, die immediately
 	$strlog=date("Y-m-d H:i:s")." -- ".$from." -- ".$strlevel[$level]." -- ".$description;
-	// write to file
-	$handle = fopen($eis_conf["logfile"],"a");
-	fwrite ($handle,$strlog."\n");
-	fclose ($handle);
-	if ($level==0) 
-		die ("ERR 0\n <br> $strlog\n");
+	if ($level==0) die ("ERR 0\n <br> $strlog\n");
 }
 
 // clear logs and return
-function eis_log_reset() {
-	global $eis_conf;
-	file_put_contents($eis_conf["logfile"],"");	
+function eis_log_clear() {
+	global $eis_mysqli;
+	if (!$eis_mysqli->query("DELETE FROM log")) die("system:cannotLog: ".$eis_mysqli->error);
+}
+
+// return last $lines log records as array, relative to the device $device ("" == all logs)
+function eis_log_get($device,$lines) {
+	global $eis_mysqli;
+	$lines=intval($lines);
+	if ($lines<0) $lines=50;
+	if ($device=="") $where=""; else $where="WHERE device='$device'";
+	$result=$eis_mysqli->query("SELECT * FROM log $where ORDER BY timestamp DESC LIMIT $lines");
+	$log=array();
+	while ($l=$result->fetch_array(MYSQLI_ASSOC))
+		$log[]=date("Y-m-d H:i:s",$l["timestamp"])." -- ".$l["device"]." -- ".$l["level"]." -- ".$l["message"];
+	return $log;
 }
 
 
 //////// error reporting functions
 
-// set error condition, i.e. set the global vars $eis_conf["error"] and $eis_conf["errmsg"]
+// global vars for testing error condition ($eis_error) and get error message ($eis_errmsg)
+$eis_error=false;
+$eis_errmsg="";
+
+// set error condition, set $eis_error to $error and $eis_errmsg to $errmsg		
 // always return false
 function eis_error($error,$errmsg) {
-	global $eis_conf;
-	$eis_conf["error"]=$error;
-	$eis_conf["errmsg"]=$errmsg;
-	eis_log(1,$error." --> ".$errmsg);
+	global $eis_error,$eis_errmsg;
+	$eis_error=$error;
+	$eis_errmsg=$errmsg;
+	if ($errmsg!="") $errmsg=" --> ".$errmsg;
+	//eis_log(1,$error.$errmsg);
 	return false;
 }
 
-// clear error condition
+// clear error condition set $eis_error to false and $eis_errmsg to ""
 function eis_clear_error() {
-	global $eis_conf;
-	$eis_conf["error"]=false;
-	$eis_conf["errmsg"]="";
+	global $eis_error,$eis_errmsg;
+	$eis_error=false;
+	$eis_errmsg="";
 }
 
 
@@ -94,7 +146,8 @@ function eis_send_returnmsg($returnmsg) {
 	flush();
 	// check and log errors
 	if ($returnmsg["error"]) {
-		eis_log(1,$returnmsg["error"]." --> ".$returnmsg["returnpar"]["errordata"]);
+		if ($returnmsg["returnpar"]["errordata"]!="") $errmsg=" --> ".$returnmsg["returnpar"]["errordata"]; else $errmsg="";
+		eis_log(1,$returnmsg["error"].$errmsg);
 		die();
 	}
 }
@@ -132,12 +185,13 @@ function eis_getcalldata () {
 //////// eis call sending functions
 	
 // device call function, accept all the call parameters, return true=ok/false=error and the "returnmsg" array
-// in case of error, error code and error message can be found into global vars $eis_conf["error"] and $eis_conf["errmsg"] 
+// in case of error, error code and error message can be found into global vars $eis_error and $eis_errmsg	 
 function eis_call($url,$timestamp,$from,$type,$cmd,$param,&$returnmsg) {
 	global $eis_conf;
 	eis_clear_error();
 	// prepare data
 	$calldata=array("timestamp"=>$timestamp,"from"=>$from,"type"=>$type,"cmd"=>$cmd,"param"=>$param);
+	$to=$url;
 	// check if host is alive
 	if(substr($url,-1)=="/") $url=$url."control.php"; else $url=$url."/control.php";
 	if (!($p=parse_url($url,PHP_URL_PORT))) $p=80;

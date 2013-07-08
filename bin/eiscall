@@ -3,38 +3,42 @@
 
 // **** EIS ****
 // call a given device with some parameters
-// upf, May2013
+// upf, May2013 (revised Jun13)
+
+// required includes
+require_once("/etc/eis_conf.php");
+include($eis_conf["path"]."/system/eis_device_lib.php");
 
 // get command line parameter
 if (sizeof($argv)<4) {
-	print "usage:  eiscall  device_url  call_type  cmd  par1name par1value  par2name par2value ......\n";
+	print "usage:  eiscall  deviceID[@host]  call_type  cmd  par1name par1value  par2name par2value ......\n";
 	exit(0);
 }
-$url=$argv[1];
+$device=$argv[1];
 $type=$argv[2];
 $cmd=$argv[3];
-$param=array();
+$eis_dev_conf["ID"]="console";
+$inputpar=array();
 for ($i=4; $i<sizeof($argv); $i+=2) {
 	$j=$i+1;
-	if ($j<sizeof($argv)) $param[$argv[$i]]=$argv[$j];
+	if ($j<sizeof($argv)) $inputpar[$argv[$i]]=$argv[$j];
 }
-
-// required includes
-require_once("../system/eis_conf.php");
-include("../system/eis_system_lib.php");
 
 // set timer
 $mtime=microtime(true);
 
 // exec call
-if (!eis_call($url,time(),"console",$type,$cmd,$param,$returnmsg)) {
-	print "error code   : ".$eis_conf["error"]."\n";
+eis_dev_call($device,$type,$cmd,$inputpar,$outputpar);
+
+// print results
+if ($eis_error) {
+	print "error code   : ".$eis_error."\n";
 	print "error message: ";
-	print_r($eis_conf["errmsg"]);
+	print_r($eis_errmsg);
 }
 else {
 	print "return parameters:\n";
-	print_r($returnmsg["returnpar"]);
+	print_r($outputpar);
 }
 
 // print execution time

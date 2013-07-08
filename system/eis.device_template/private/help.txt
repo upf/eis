@@ -1,0 +1,40 @@
+# -- help file for a device --
+# sintax:
+#    comments: lines beginning with a "#" char
+#    sections:  {** your_section_name **}
+#    commands:  [** your_command_name **]
+#    signals :  (** you_signal_name **)
+
+
+# write here your device main description
+{**Description**}
+This is a template device, use it only for learning and experimenting. To start writing a new device
+copy this device folder to the "eis/devices" directory, rename it with your deviceID and begin to work.
+
+
+# write here your device commands description
+{**Commands**}
+Beside the built-in (predefined) commands, this device implements some own commands.
+
+[**simulate**]
+This is template for the mandatory "simulate" command.
+input parameters:
+	timestamp (integer, mandatory): the current timestamp for the simulation step
+output parameters:
+	the current status array
+specific errors: none
+
+
+# write here your device signals description
+{**Signals**}
+Beside the built-in (predefined) signals, this device implements some own signals.
+
+(**poweron**)
+This is template for the mandatory "poweron" command. It sets the power status to "on".
+input parameters: none
+
+(**poweroff**)
+This is template for the mandatory "poweroff" command. It sets the power status to "off", zeroing also the cpowers.
+input parameters: none
+
+

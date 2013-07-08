@@ -16,7 +16,7 @@ switch ($calldata["type"]) {
 	case "dexec":
 		eis_send_returnmsg(eis_ok_msg(null));
 		$returnmsg=eis_exec($calldata);
-		eis_call($calldata["from"],time(),$eis_dev_conf["ID"],"signal","dexec_return",$returnmsg,$retmsg);
+		eis_call($calldata["from"],time(),eis_dev_geturl($eis_dev_conf["ID"],""),"signal","dexec_return",$returnmsg,$retmsg);
 		break;
 	case "signal":
 		eis_send_returnmsg(eis_ok_msg(null));
