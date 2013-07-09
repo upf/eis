@@ -53,6 +53,7 @@ function eis_set_predefined_var_status() {
 	$eis_dev_status["sim_id"]="0000";		// current simulation id
 	$eis_dev_status["sim_step"]=10;			// current simulation step in minutes
 	$eis_dev_status["sim_type"]="off-grid";	// current simulation type: off-grid or grid-connected
+	$eis_dev_status["blackout"]=false;		// current line blackout status
 }
 
 // load the device status array from database
@@ -150,7 +151,6 @@ function eis_exec($calldata) {
 		// requires some simulation parameters
 		// in case of success returns actual status array
 		case "init":
-			//print "hello";
 			if (!array_key_exists("timestamp",$callparam)) return eis_error_msg("system:parameterMissing","timestamp");
 			if (!array_key_exists("sim_id",$callparam)) return eis_error_msg("system:parameterMissing","sim_id");
 			if (!array_key_exists("sim_step",$callparam)) return eis_error_msg("system:parameterMissing","sim_step");
@@ -168,6 +168,19 @@ function eis_exec($calldata) {
 		// simulate command: do the simulation step at time timestamp, on success return some device dependent data
 		case "simulate":
 			if (!array_key_exists("timestamp",$callparam)) return eis_error_msg("system:parameterMissing","timestamp");
+			// check parameters for loads and generators
+			if ($eis_dev_conf["type"]=="load" or $eis_dev_conf["type"]=="generator") {
+				if (!array_key_exists("meteo",$callparam)) return eis_error_msg("system:parameterMissing","meteo");
+				if (!array_key_exists("blackout",$callparam)) return eis_error_msg("system:parameterMissing","blackout");
+				if ($callparam["blackout"] and !$eis_dev_status["blackout"]) {
+					eis_signal(array("cmd"=>"poweroff"));
+					$eis_dev_status["blackout"]=true;
+				}
+				if (!$callparam["blackout"] and $eis_dev_status["blackout"]) {
+					eis_signal(array("cmd"=>"poweron"));
+					$eis_dev_status["blackout"]=false;
+				}
+			}
 			eis_clear_error();
 			if (!eis_device_simulate($callparam)) return eis_error_msg($eis_error,$eis_errmsg);
 			$eis_dev_status["timestamp"]=$callparam["timestamp"];  // update timestamp

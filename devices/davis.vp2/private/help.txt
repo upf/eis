@@ -9,8 +9,7 @@
 
 {**Description**}
 This is a simple meteo station device, able to return a new set of meteo data at each simulation step.
-It is also a small and fixed electrical load.
-Implemented meteo data and units are:
+Implemented meteo data (with units) are:
 temperature (Celsius)
 humidity (%)
 windspeed (m/s)
@@ -24,7 +23,7 @@ Beside the built-in (predefined) commands, this device implements only the "simu
 Use the predefined command "getstatus" to get the meteo data at the current simulation time.
 
 [**simulate**]
-Compute a new meteo data set and store it in the device status.
+Compute a new meteo data set and store it in the device status using field names as those listed before.
 input parameters:
 	timestamp (integer, mandatory): the current timestamp for the simulation step
 output parameters:
@@ -40,7 +39,7 @@ Sets the power status to "on" and recomputes the meteo data at the current simul
 input parameters: none
 
 (**poweroff**)
-Sets the power status to "off", sets the power consumed to zero and resets the meteo data to those contained in the device default configuration.
+Sets the power status to "off", sets the power status to zero anf freezes the meteo data until a poweron signal is given.
 input parameters: none
 
 

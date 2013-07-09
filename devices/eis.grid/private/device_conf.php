@@ -45,28 +45,30 @@ $eis_dev_conf["gpower3"]=3000;
 // device status array
 // these value will be used during device initialization
 $eis_dev_conf["status"]=array(
-	// grid immission vars
+	// grid connection status var
+	"gridstatus"=>"ok",			// "ok","disconnected","overload","overgen" (last 3 == no grid connection)
+	// grid immission vars (consuming on unprotected line == selling to grid)
 	"cline"		=> "unprotected",		// set always to "unprotected"
-	"cpower1"	=> 0,					// current immission power on  line 1
-	"cenergy1"	=> 0, 					// current total sold energy by line 1
-	"cpower2"	=> 0,					// current immission power on  line 2
-	"cenergy2"	=> 0, 					// current total sold energy by line 2
-	"cpower3"	=> 0,					// current immission power on  line 3
-	"cenergy3"	=> 0, 					// current total sold energy by line 3
-	// grid consumption vars
+	"cpower1"	=> 0,			// current immission power on  line 1
+	"cenergy1"	=> 0, 			// current total sold energy by line 1
+	"cpower2"	=> 0,			// current immission power on  line 2
+	"cenergy2"	=> 0, 			// current total sold energy by line 2
+	"cpower3"	=> 0,			// current immission power on  line 3
+	"cenergy3"	=> 0, 			// current total sold energy by line 3
+	// grid consumption vars (generating on unprotected line == buying from grid)
 	"gline"		=> "unprotected",		// set always to "unprotected"
-	"gpower1"	=> 0,					// current assorbed power on line 1
-	"genergy1"	=> 0, 					// current total assorbed energy by line 1
-	"gpower2"	=> 0,					// current assorbed power on line 2
-	"genergy2"	=> 0, 					// current total assorbed energy by line 2
-	"gpower3"	=> 0,					// current assorbed power on line 3
-	"genergy3"	=> 0, 					// current total assorbed energy by line 3
+	"gpower1"	=> 0,			// current assorbed power on line 1
+	"genergy1"	=> 0, 			// current total assorbed energy by line 1
+	"gpower2"	=> 0,			// current assorbed power on line 2
+	"genergy2"	=> 0, 			// current total assorbed energy by line 2
+	"gpower3"	=> 0,			// current assorbed power on line 3
+	"genergy3"	=> 0, 			// current total assorbed energy by line 3
 	// prices
 	"price_model"=> "constant_rate",	// price model ID
-	"price_sell" => 0.01,				// current selling price
-	"price_buy"  => 0.02,				// current buying price
-	"total_sell" => 0,					// current cost for buying
-	"total_buy"	 => 0					// current gain for selling
+	"price_sell" => 0.01,		// current selling price
+	"price_buy"  => 0.02,		// current buying price
+	"total_sell" => 0,			// current cost for buying
+	"total_buy"	 => 0			// current gain for selling
 	
 );
 

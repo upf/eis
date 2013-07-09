@@ -35,16 +35,23 @@ function eis_device_simulate($callparam) {
 	if (!array_key_exists("gpower",$callparam)) return eis_error("system:parameterMissing","gpower");
 	$timestamp=$callparam["timestamp"];
 	$timestep=$eis_dev_status["sim_step"]*60;
-	// update energy in kWh
+	// for each phase
 	for ($p=1; $p<4;$p++) {
-		// compute powers from input parameters
-		if ($callparam["gpower"][$p]>$callparam["cpower"][$p]) {
-			$eis_dev_status["cpower".$p] = $callparam["gpower"][$p]-$callparam["cpower"][$p];
+		// if disconnected set powers to zero
+		if ($eis_dev_status["gridstatus"]!="ok") {
+			$eis_dev_status["cpower".$p] = 0;
 			$eis_dev_status["gpower".$p] = 0;
 		}
 		else {
-			$eis_dev_status["gpower".$p] = $callparam["cpower"][$p]-$callparam["gpower"][$p];
-			$eis_dev_status["cpower".$p] = 0;
+			// else compute powers from input parameters
+			if ($callparam["gpower"][$p]>$callparam["cpower"][$p]) {
+				$eis_dev_status["cpower".$p] = $callparam["gpower"][$p]-$callparam["cpower"][$p];
+				$eis_dev_status["gpower".$p] = 0;
+			}
+			else {
+				$eis_dev_status["gpower".$p] = $callparam["cpower"][$p]-$callparam["gpower"][$p];
+				$eis_dev_status["cpower".$p] = 0;
+			}
 		}	
 		// compute energy in kWh for the current timestep
 		$genergy = $eis_dev_status["gpower".$p]*$timestep/3600000.0;
@@ -55,6 +62,10 @@ function eis_device_simulate($callparam) {
 		// update cost counters
 		$eis_dev_status["total_sell"] = $eis_dev_status["total_sell"] + $cenergy*sell_price($timestamp);
 		$eis_dev_status["total_buy"] = $eis_dev_status["total_buy"] + $genergy*buy_price($timestamp);
+		// check connection overload and overgen
+		if ($eis_dev_status["gpower".$p]>$eis_dev_conf["gpower".$p]) $eis_dev_status["gridstatus"]="overload";
+		if ($eis_dev_status["cpower".$p]>$eis_dev_conf["cpower".$p]) $eis_dev_status["gridstatus"]="overgen";
+		if ($eis_dev_status["gridstatus"]!="ok") $eis_dev_status["power"]=false;
 	}
 	return true;
 }
@@ -63,14 +74,14 @@ function eis_device_simulate($callparam) {
 // poweron signal device specific  code
 function eis_device_poweron() {
 	global $eis_conf,$eis_dev_conf,$eis_dev_status,$eis_mysqli;
-	// ************ to be implemented 
+	$eis_dev_status["gridstatus"]="ok"; 
 	return true;
 }
 
 // poweroff signal device specific  code
 function eis_device_poweroff() {
 	global $eis_conf,$eis_dev_conf,$eis_dev_status,$eis_mysqli;
-	// ************ to be implemented 
+	$eis_dev_status["gridstatus"]="disconnected"; 
 	return true;
 }
 

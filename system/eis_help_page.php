@@ -6,7 +6,7 @@
 
 
 // print page headers
-print eis_page_header("help ".$eis_dev_conf["ID"],"");
+print eis_page_header("help ".$eis_dev_conf["ID"],"",null);
 print "<b>help for <i>\"".$eis_dev_conf["description"]."\":</b> &nbsp&nbsp version: ".$eis_dev_conf["version"]."&nbsp&nbsp date: ".$eis_dev_conf["date"].
         "&nbsp&nbsp author: ".$eis_dev_conf["author"]."&nbsp&nbsp class: ".$eis_dev_conf["class"]."&nbsp&nbsp type: ".$eis_dev_conf["type"]."\n";
 

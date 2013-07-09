@@ -42,7 +42,7 @@ $headers='
     <script src="../lib/jquery.min.js"></script>
     ';
 // output standard eis page 
-print eis_page_header($eis_dev_conf["ID"],$headers,"grid.png");
+print eis_page_header($eis_dev_conf["ID"],$headers,"velter.jpg");
 // timestamp field
 print "<h3><div id='timestamp'></div></h3>\n";     
 // enable/disable buttons
@@ -51,13 +51,16 @@ print "<img id='enabled' align='middle' height=25 width=25>
         <input type='button' value='disable' onClick=\"eis_callback('enable','disable');\" /> ".eis_spaces(8)."\n";
 // power on/off buttons
 print "<img id='power' align='middle' height=25 width=25> 
-        <input type='button' value='connect' onClick=\"eis_callback('power','poweron');\" />
-        <input type='button' value='disconnect' onClick=\"eis_callback('power','poweroff');\" />\n";
-// print gauges and labels table
-print "<br><br><table style='width:100%'><tr>\n";
-for($i=1;$i<4;$i++) print "<td style='text-align:center'><canvas id='power$i' width=270 height=270>[No canvas support]</canvas></td>\n";
+        <input type='button' value='power on' onClick=\"eis_callback('power','poweron');\" />
+        <input type='button' value='power off' onClick=\"eis_callback('power','poweroff');\" />\n";
+// cline and gline status
+if (array_key_exists("cline",$eis_dev_status)) print eis_spaces(4)."<b><i>cline: ".$eis_dev_status["cline"]."</i></b>\n";
+if (array_key_exists("gline",$eis_dev_status)) print eis_spaces(4)."<b><i>gline: ".$eis_dev_status["gline"]."</i></b>\n";
+// print gauges and labels table for gline (only for generators)
+print "<br><table style='width:100%'><tr>\n";
+for($i=1;$i<4;$i++) print "<td style='text-align:center'><canvas id='ggauge$i' width=230 height=230>[No canvas support]</canvas></td>\n";
 print "</tr><tr>\n";
-for($i=1;$i<4;$i++) print "<td style='text-align:center'><div id='energy$i'></div></td>\n";
+for($i=1;$i<4;$i++) print "<td style='text-align:center'><div id='genergy$i'></div></td>\n";
 print "</tr></table><br>\n";
 
 
@@ -71,40 +74,33 @@ print "document.getElementById('enabled').src='$enabled';\n";
 // set power field
 if ($eis_dev_status["power"]) $power="../lib/green-on.png"; else $power="../lib/green-off.png"; 
 print "document.getElementById('power').src='$power';\n";
-// set gauges parameters and draw gauges and labels
+// set gauges parameters and draw gauges and labels only for generators
 for($i=1;$i<4;$i++) {
     $oldstatus=$eis_dev_status;
-    if (array_key_exists("cpower$i",$eis_dev_conf)) $cpower_conf=$eis_dev_conf["cpower$i"]; else $cpower_conf=0;
     if (array_key_exists("gpower$i",$eis_dev_conf)) $gpower_conf=$eis_dev_conf["gpower$i"]; else $gpower_conf=0;
-    if (array_key_exists("cpower$i",$oldstatus)) $cpower_stat=$oldstatus["cpower$i"]; else $cpower_stat=0;
     if (array_key_exists("gpower$i",$oldstatus)) $gpower_stat=$oldstatus["gpower$i"]; else $gpower_stat=0;
-    if (array_key_exists("cenergy$i",$oldstatus)) $cenergy=$oldstatus["cenergy$i"]; else $cenergy=0;
     if (array_key_exists("genergy$i",$oldstatus)) $genergy=$oldstatus["genergy$i"]; else $genergy=0;
-    $powermin=-$cpower_conf;
+    $powermin=0;
     $powermax=$gpower_conf;
-    $powerval=$gpower_stat-$cpower_stat;
-    $powergreen=-$cpower_conf*0.25;
-    $powerred=$gpower_conf*0.25;
+    $powerval=$gpower_stat;
+    $powerred=$gpower_conf*0.7;
+    $powergreen=$gpower_conf*0.3;
     // init Javascript power and energy variables
-    print "var cpower$i=$cpower_stat;
-    var gpower$i=$gpower_stat;
-    var cenergy$i=$cenergy;
+    print "var gpower$i=$gpower_stat;
     var genergy$i=$genergy;\n";
-    // draw gauge in kW
-    print "var power$i = new RGraph.Gauge('power$i', $powermin, $powermax, ".($powerval).");
-        power$i.Set('chart.title','phase $i');
-        power$i.Set('chart.red.start','$powerred');
-        power$i.Set('chart.green.end','$powergreen');
-        power$i.Set('chart.title.bottom', 'W');
-        power$i.Set('chart.green.color','green');
-        power$i.Set('chart.red.color','red');
-        RGraph.Effects.Gauge.Grow(power$i);
+    // draw gauge
+    print "var ggauge$i = new RGraph.Gauge('ggauge$i', $powermin, $powermax, $powerval);
+        ggauge$i.Set('chart.title','phase $i');
+        ggauge$i.Set('chart.red.start','$powerred');
+        ggauge$i.Set('chart.green.end','$powergreen');
+        ggauge$i.Set('chart.title.bottom', 'watt');
+        ggauge$i.Set('chart.green.color','red');
+        ggauge$i.Set('chart.red.color','green');
+        RGraph.Effects.Gauge.Grow(ggauge$i);
     ";
     // draw labels
-    print "var ev=$genergy-$cenergy;
-            if (ev>0) cv='red'; else cv='green';
-            document.getElementById('energy$i').innerHTML = '<h3><font color='+cv+'>'+ev.toFixed(3)+' kWh</font></h3>';
-    ";
+    print "var ev=$genergy;
+    document.getElementById('genergy$i').innerHTML = '<h3><font color=green>'+ev.toFixed(3)+' kWh</font></h3>';";
 }
 print "</script>\n";
 
@@ -132,35 +128,25 @@ print "</script>\n";
                     if (status[i]) s="../lib/green-on.png"; else s="../lib/green-off.png"; 
                     document.getElementById('power').src = s;
                     break;
-                case "cpower1": cpower1=status[i]; break;
-                case "cpower2": cpower2=status[i]; break;
-                case "cpower3": cpower3=status[i]; break;
+                 // generator cases
                 case "gpower1": gpower1=status[i]; break;
                 case "gpower2": gpower2=status[i]; break;
                 case "gpower3": gpower3=status[i]; break;
-                case "cenergy1": cenergy1=status[i]; break;
-                case "cenergy2": cenergy2=status[i]; break;
-                case "cenergy3": cenergy3=status[i]; break;
                 case "genergy1": genergy1=status[i]; break;
                 case "genergy2": genergy2=status[i]; break;
                 case "genergy3": genergy3=status[i]; break;
            }
-        power1.value=(gpower1-cpower1);
-        RGraph.Effects.Gauge.Grow(power1);                    
-        power2.value=(gpower2-cpower2);
-        RGraph.Effects.Gauge.Grow(power2);                    
-        power3.value=(gpower3-cpower3);
-        RGraph.Effects.Gauge.Grow(power3);
-        e=genergy1-cenergy1;
-        if (e>0) c='red'; else c='green';
-        document.getElementById('energy1').innerHTML = '<h3><font color='+c+'>'+e.toFixed(3)+' kWh</font></h3>';
-        e=genergy2-cenergy2;
-        if (e>0) c='red'; else c='green';
-        document.getElementById('energy2').innerHTML = '<h3><font color='+c+'>'+e.toFixed(3)+' kWh</font></h3>';
-        e=genergy3-cenergy3;
-        if (e>0) c='red'; else c='green';
-        document.getElementById('energy3').innerHTML = '<h3><font color='+c+'>'+e.toFixed(3)+' kWh</font></h3>';
-    }
+       // generator cases updating
+        ggauge1.value=gpower1;
+        RGraph.Effects.Gauge.Grow(ggauge1);                    
+        ggauge2.value=gpower2;
+        RGraph.Effects.Gauge.Grow(ggauge2);                    
+        ggauge3.value=gpower3;
+        RGraph.Effects.Gauge.Grow(ggauge3);
+        document.getElementById('genergy1').innerHTML = '<h3><font color=green>'+genergy1.toFixed(3)+' kWh</font></h3>';
+        document.getElementById('genergy2').innerHTML = '<h3><font color=green>'+genergy2.toFixed(3)+' kWh</font></h3>';
+        document.getElementById('genergy3').innerHTML = '<h3><font color=green>'+genergy3.toFixed(3)+' kWh</font></h3>';
+     }
 
 </script>
 

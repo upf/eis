@@ -25,7 +25,7 @@ $eis_dev_conf["ifport"]=40100;
 $eis_dev_conf["class"]="meteo_station";
 
 // device short description
-$eis_dev_conf["description"]="a virtual meteo station";
+$eis_dev_conf["description"]="a virtual meteo station resembling a Davis Vantage Pro 2";
 
 // device electrical type (load, generator, load&gen)
 $eis_dev_conf["type"]="virtual";

@@ -26,7 +26,7 @@ foreach ($devinfo as $d=>$i) {
 	if ($i["class"]=="meteo_station") $meteo=$d;
 	if ($i["class"]=="grid") $grid=$d;
 	if ($i["class"]=="auxiliary_generator") $auxgen=$d;
-	if ($i["class"]=="storage") $storage=$d;
+	if ($i["class"]=="electrical_storage") $storage=$d;
 	if ($i["cline"]=="protected" or $i["gline"]=="protected") $protected[]=$d;
 	if ($i["cline"]=="unprotected" or $i["gline"]=="unprotected") $unprotected[]=$d;
 }
@@ -59,7 +59,6 @@ if (isset($_REQUEST["simulate"])) {
 	$ugpower=array(1=>0,2=>0,3=>0);	// unprotected line gen powers
 	$timestamp=$_REQUEST["simulate"];
 	// call meteo device
-	eis_clear_error();
    	$fields=array("temperature","humidity","windspeed","winddir","pressure","radiation");
    	$i=$devinfo[$meteo];
 	if (eis_dev_call($meteo."@".$i["host"],"exec","simulate",array("timestamp"=>$timestamp),$outpar)) {
@@ -80,12 +79,10 @@ if (isset($_REQUEST["simulate"])) {
 	if ($eis_error) { print json_encode($devstatus); die(); } // if meteo fails, skip simulation step
 	// call all load devices on protected line
     foreach ($protected as $d) {
-		eis_clear_error();
  	   	$i=$devinfo[$d];
-	   	if ($i["type"]=="generator" or $i["class"]=="storage") continue;
-		if (eis_call(eis_dev_geturl($d,$i["host"]),time(),eis_dev_geturl($eis_dev_conf["ID"],$_SERVER["SERVER_NAME"]),"exec","simulate",
-				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$pcpower),$returnmsg)) {
-			$r=$returnmsg["returnpar"];
+	   	if ($i["type"]=="generator" or $i["class"]=="storage" or $i["type"]=="virtual") continue;
+		if (eis_dev_call($d."@".$i["host"],"exec","simulate",
+					array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"blackout"=>$eis_dev_status["pl_blackout"]),$r)) {
 			$devstatus[$d]["cpower"]=$r["cpower1"].",".$r["cpower2"].",".$r["cpower3"];
 			$devstatus[$d]["cenergy"]=number_format($r["cenergy1"],4).",".number_format($r["cenergy2"],4).",".number_format($r["cenergy3"],4);
 			for ($p=1; $p<4; $p++) if (array_key_exists("cpower".$p,$r)) $pcpower[$p]+=$r["cpower".$p];
@@ -95,12 +92,10 @@ if (isset($_REQUEST["simulate"])) {
 	// call all generator devices on protected line
     reset($protected);
     foreach ($protected as $d) {
-   		eis_clear_error(); 
 	   	$i=$devinfo[$d];
-	   	if ($i["type"]=="load" or $i["class"]=="storage") continue;
-		if (eis_call(eis_dev_geturl($d,$i["host"]),time(),eis_dev_geturl($eis_dev_conf["ID"],$_SERVER["SERVER_NAME"]),"exec","simulate",
-				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$pcpower,"gpower"=>$pgpower),$returnmsg)) {
-			$r=$returnmsg["returnpar"];
+	   	if ($i["type"]=="load" or $i["class"]=="storage" or $i["type"]=="virtual") continue;
+		if (eis_dev_call($d."@".$i["host"],"exec","simulate",
+				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$pcpower,"blackout"=>$eis_dev_status["pl_blackout"]),$r)) {
 			$devstatus[$d]["gpower"]=$r["gpower1"].",".$r["gpower2"].",".$r["gpower3"];
 			$devstatus[$d]["genergy"]=number_format($r["genergy1"],4).",".number_format($r["genergy2"],4).",".number_format($r["genergy3"],4);
 			for ($p=1; $p<4; $p++) if (array_key_exists("gpower".$p,$r)) $pgpower[$p]+=$r["gpower".$p];
@@ -109,23 +104,20 @@ if (isset($_REQUEST["simulate"])) {
     }
 	// call storage device if exists
 	if (isset($storage)) {
-		eis_clear_error();
 	   	$i=$devinfo[$storage];
-		if (eis_call(eis_dev_geturl($storage,$i["host"]),time(),eis_dev_geturl($eis_dev_conf["ID"],$_SERVER["SERVER_NAME"]),"exec","simulate",
-				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$pcpower,"gpower"=>$pgpower),$returnmsg)) {
-			$devstatus["storage"]=$returnmsg["returnpar"];
+		if (eis_dev_call($storage."@".$i["host"],"exec","simulate",
+				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$pcpower,"gpower"=>$pgpower),$r)) {
+			$devstatus["storage"]=$r;
 			for ($p=1; $p<4; $p++) if (array_key_exists("cpower".$p,$devstatus[$d])) $ucpower[$p]+=$devstatus[$d]["cpower".$p];
 		}
    		if ($eis_error) $devstatus["storage"]["error"]="<font color='red'>".$eis_error."</font>"; else $devstatus["storage"]["error"]="-----";
     }
 	// call all load devices on unprotected line
     foreach ($unprotected as $d) {
-		eis_clear_error();
  	   	$i=$devinfo[$d];
-	   	if ($i["type"]=="generator" or in_array($i["class"],array("storage","grid","auxiliary_generator","master","meteo_station"))) continue;
-		if (eis_call(eis_dev_geturl($d,$i["host"]),time(),eis_dev_geturl($eis_dev_conf["ID"],$_SERVER["SERVER_NAME"]),"exec","simulate",
-				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$ucpower),$returnmsg)) {
-			$r=$returnmsg["returnpar"];
+	   	if ($i["type"]=="generator" or in_array($i["class"],array("electrical_storage","grid","auxiliary_generator")) or $i["type"]=="virtual") continue;
+		if (eis_dev_call($d."@".$i["host"],"exec","simulate",
+					array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"blackout"=>$eis_dev_status["ul_blackout"]),$r)) {
 			$devstatus[$d]["cpower"]=$r["cpower1"].",".$r["cpower2"].",".$r["cpower3"];
 			$devstatus[$d]["cenergy"]=number_format($r["cenergy1"],4).",".number_format($r["cenergy2"],4).",".number_format($r["cenergy3"],4);
 			for ($p=1; $p<4; $p++) if (array_key_exists("cpower".$p,$r)) $ucpower[$p]+=$r["cpower".$p];
@@ -135,12 +127,10 @@ if (isset($_REQUEST["simulate"])) {
 	// call all generator devices on unprotected line
     reset($unprotected);
     foreach ($unprotected as $d) {
-		eis_clear_error();
  	   	$i=$devinfo[$d];
-	   	if ($i["type"]=="load" or in_array($i["class"],array("storage","grid","auxiliary_generator","master","meteo_station"))) continue;
-		if (eis_call(eis_dev_geturl($d,$i["host"]),time(),eis_dev_geturl($eis_dev_conf["ID"],$_SERVER["SERVER_NAME"]),"exec","simulate",
-				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$ucpower,"gpower"=>$ugpower),$returnmsg)) {
-			$r=$returnmsg["returnpar"];
+	   	if ($i["type"]=="load" or in_array($i["class"],array("electrical_storage","grid","auxiliary_generator")) or $i["type"]=="virtual") continue;
+		if (eis_dev_call($d."@".$i["host"],"exec","simulate",
+				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$ucpower,"blackout"=>$eis_dev_status["ul_blackout"]),$r)) {
 			$devstatus[$d]["gpower"]=$r["gpower1"].",".$r["gpower2"].",".$r["gpower3"];
 			$devstatus[$d]["genergy"]=number_format($r["genergy1"],4).",".number_format($r["genergy2"],4).",".number_format($r["genergy3"],4);
 			for ($p=1; $p<4; $p++) if (array_key_exists("gpower".$p,$r)) $ugpower[$p]+=$r["gpower".$p];
@@ -149,32 +139,34 @@ if (isset($_REQUEST["simulate"])) {
     }
 	// call grid device if exists
 	if (isset($grid)) {
-		eis_clear_error();
 	   	$i=$devinfo[$grid];
-		if (eis_call(eis_dev_geturl($grid,$i["host"]),time(),eis_dev_geturl($eis_dev_conf["ID"],$_SERVER["SERVER_NAME"]),"exec","simulate",
-				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$ucpower,"gpower"=>$ugpower),$returnmsg)) 
-		$r=$returnmsg["returnpar"];
-		$devstatus["grid"]["gpower"]=$r["gpower1"].",".$r["gpower2"].",".$r["gpower3"];
-		$devstatus["grid"]["genergy"]=number_format($r["genergy1"],4).",".number_format($r["genergy2"],4).",".number_format($r["genergy3"],4);
- 		$devstatus["grid"]["cpower"]=$r["cpower1"].",".$r["cpower2"].",".$r["cpower3"];
-		$devstatus["grid"]["cenergy"]=number_format($r["cenergy1"],4).",".number_format($r["cenergy2"],4).",".number_format($r["cenergy3"],4);
-		$devstatus["grid"]["price_sell"]=$r["price_sell"];
-		$devstatus["grid"]["price_buy"]=$r["price_buy"];
-		$devstatus["grid"]["tpower"]=$r["gpower1"]+$r["gpower2"]+$r["gpower3"]-$r["cpower1"]-$r["cpower2"]-$r["cpower3"];
-		$devstatus["grid"]["tenergy"]=number_format($r["genergy1"]+$r["genergy2"]+$r["genergy3"]-$r["cenergy1"]-$r["cenergy2"]-$r["cenergy3"],4);
-		$devstatus["grid"]["total_sell"]=number_format($r["total_sell"],4);
-		$devstatus["grid"]["total_buy"]=number_format($r["total_buy"],4);
-		$devstatus["grid"]["total_money"]=number_format($r["total_buy"]-$r["total_sell"],4);
-  		$devstatus["grid"]["error"]=$eis_error;
-   		if ($eis_error) $devstatus["grid"]["error"]="<font color='red'>".$eis_error."</font>"; else $devstatus["grid"]["error"]="-----";
+		if (eis_dev_call($grid."@".$i["host"],"exec","simulate",
+				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$ucpower,"gpower"=>$ugpower),$r)) {
+			$devstatus["grid"]["gpower"]=$r["gpower1"].",".$r["gpower2"].",".$r["gpower3"];
+			$devstatus["grid"]["genergy"]=number_format($r["genergy1"],4).",".number_format($r["genergy2"],4).",".number_format($r["genergy3"],4);
+	 		$devstatus["grid"]["cpower"]=$r["cpower1"].",".$r["cpower2"].",".$r["cpower3"];
+			$devstatus["grid"]["cenergy"]=number_format($r["cenergy1"],4).",".number_format($r["cenergy2"],4).",".number_format($r["cenergy3"],4);
+			$devstatus["grid"]["price_sell"]=$r["price_sell"];
+			$devstatus["grid"]["price_buy"]=$r["price_buy"];
+			$devstatus["grid"]["tpower"]=$r["gpower1"]+$r["gpower2"]+$r["gpower3"]-$r["cpower1"]-$r["cpower2"]-$r["cpower3"];
+			$devstatus["grid"]["tenergy"]=number_format($r["genergy1"]+$r["genergy2"]+$r["genergy3"]-$r["cenergy1"]-$r["cenergy2"]-$r["cenergy3"],4);
+			$devstatus["grid"]["total_sell"]=number_format($r["total_sell"],4);
+			$devstatus["grid"]["total_buy"]=number_format($r["total_buy"],4);
+			$devstatus["grid"]["total_money"]=number_format($r["total_buy"]-$r["total_sell"],4);
+			if ($r["gridstatus"]=="ok") $c="green"; else $c="red";
+			$devstatus["grid"]["gridstatus"]="<font color='$c'>".$r["gridstatus"]."</font>";
+			if ($r["gridstatus"]=="ok") $eis_dev_status["ul_blackout"]=false; else $eis_dev_status["ul_blackout"]=true;
+  		}
+		if ($eis_error) $devstatus["grid"]["error"]="<font color='red'>".$eis_error."</font>"; else $devstatus["grid"]["error"]="-----";
     }
 	// call aux generator device if exists
 	if (isset($auxdev)) {
-		eis_clear_error();
  	   	$i=$devinfo[$auxdev];
-		if (eis_call(eis_dev_geturl($auxdev,$i["host"]),time(),eis_dev_geturl($eis_dev_conf["ID"],$_SERVER["SERVER_NAME"]),"exec","simulate",
-				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$ucpower,"gpower"=>$ugpower),$returnmsg)) 
-			$devstatus["auxdev"]=$returnmsg["returnpar"];
+		if (eis_dev_call($auxdev."@".$i["host"],"exec","simulate",
+				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$ucpower,"gpower"=>$ugpower),$r)) {
+			$devstatus["auxdev"]=$r;
+			if ($r["auxgenstatus"]!="ok") $eis_dev_status["ul_blackout"]=true; else $eis_dev_status["ul_blackout"]=false;
+		}
    		if ($eis_error) $devstatus["auxgen"]["error"]="<font color='red'>".$eis_error."</font>"; else $devstatus["auxgen"]["error"]="-----";
     }
 	// call energy manager device if exists
@@ -182,6 +174,8 @@ if (isset($_REQUEST["simulate"])) {
 
     // return update status
 	print json_encode($devstatus);
+	// save status
+	if (!eis_save_status()) die ($eis_error." --> ".$eis_errmsg);
 	die();
 }
 
@@ -191,7 +185,7 @@ if (isset($_REQUEST["simulate"])) {
 if (!eis_save_status()) die ($eis_error." --> ".$eis_errmsg);
 
 // print page headers
-print eis_page_header("eis master run","");
+print eis_page_header("eis master run","",null);
 print "<b>run simulation:</b> <i>".$eis_dev_status["sim_name"]." (id=$sim_id, type=".$eis_dev_status["sim_type"].")</i><br>";
 
 // control panel
@@ -211,14 +205,15 @@ print_datatable("Meteo data <i>($link using ".$eis_dev_status["sim_meteo"]." dat
 
 // grid device data table (if exists)
 if (isset($grid)) {
-	$headers=array("","Price (EU)","Power (W)","Energy (KWh)","Cost (EU)");
-	$rows=array(
-		array("@Buy","grid_price_buy","grid_gpower","grid_genergy","grid_total_buy"),
-		array("@Sell","grid_price_sell","grid_cpower","grid_cenergy","grid_total_sell"),
-		array("@Total","@-----","grid_tpower","grid_tenergy","grid_total_money")
-	);
+	$headers=array("BuyPrice (EU)","Buy (W)","Buy (KWh)","Cost (EU)","SellPrice (EU)","Sell (W)",
+					"Sell (KWh)","Revenue (EU)","Connection","Error");
+	$rows=array(array("grid_price_buy","grid_gpower","grid_genergy","grid_total_buy",
+			    		"grid_price_sell","grid_cpower","grid_cenergy","grid_total_sell","grid_gridstatus","grid_error"));
 	$link="<a href='".eis_dev_geturl($grid,$devinfo[$grid]["host"])."' target='_blank'>$grid</a>";
 	print_datatable("Grid data <i>($link using ".$eis_dev_status["sim_price"]." prices)</i>",$headers,$rows);
+	$headers=array("Total grid power (W)","Total grid energy (kWh)","Total cost");
+	$rows=array(array("grid_tpower","grid_tenergy","grid_total_money"));
+	print_datatable("",$headers,$rows);	
 }
 
 // aux generator device data table (if exists)

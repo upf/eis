@@ -69,8 +69,12 @@ function eis_spaces($spaces) {
 }
 
 // return a string containing the standard HTML header with some eis feature
-function eis_page_header($title,$headers) {
+function eis_page_header($title,$headers,$picture) {
 	global $eis_conf,$eis_dev_conf,$eis_realtime_header;
+	if ($picture!=null and $picture!="")
+		$img="<img align='middle' height=100 width=100 src='$picture'> ";
+	else
+		$img="<img align='middle' height=100 width=100 src='../lib/generic.jpg'> ";
 	return
 '<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -84,7 +88,7 @@ function eis_page_header($title,$headers) {
  <a href="'.eis_dev_geturl("","").'">eis home</a> &nbsp&nbsp
  <a href="'.eis_dev_geturl($eis_dev_conf["ID"],"").'"> '.$eis_dev_conf["ID"].' home</a> &nbsp&nbsp
  <a href="'.eis_dev_geturl($eis_dev_conf["ID"],"").'/help.php"> '.$eis_dev_conf["ID"].' help</a>
- <h2>'.$eis_dev_conf["ID"].' <i>('.$_SERVER["SERVER_NAME"].')</i></h2>
+ <h2>'.$img.$eis_dev_conf["ID"].' <i>('.$eis_dev_conf["class"].' at '.$_SERVER["SERVER_NAME"].')</i></h2>
  ';
 }
 

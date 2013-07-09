@@ -44,7 +44,7 @@ $headers='
     <style>
         td {text-align: center}
     </style>';
-print eis_page_header($eis_dev_conf["ID"],$headers);
+print eis_page_header($eis_dev_conf["ID"],$headers,"picture.jpg");
 
 // timestamp field
 print "<h3><div id='timestamp'></div></h3>\n";     
@@ -117,7 +117,7 @@ print "<td><canvas id='winddir' width=250 height=250>[No canvas support]</canvas
     RGraph.Effects.Gauge.Grow(pressure);
 
    // wind speed
-    var wind = new RGraph.Gauge('windspeed', 0, 100, <?php print $eis_dev_status["windspeed"];?>);
+    var wind = new RGraph.Gauge('windspeed', 0, 100, <?php print $eis_dev_status["windspeed"]*3.6;?>);
     wind.Set('chart.tickmarks.small', 50);
     wind.Set('chart.tickmarks.big',5);
     wind.Set('chart.title.top', 'Wind Speed');
@@ -183,7 +183,7 @@ print "<td><canvas id='winddir' width=250 height=250>[No canvas support]</canvas
                     RGraph.Effects.Gauge.Grow(pressure);
                     break;
                  case "windspeed":
-                    wind.value=status[i];
+                    wind.value=status[i]*3.6;
                     RGraph.Effects.Gauge.Grow(wind);
                     break;
                  case "winddir":

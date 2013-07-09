@@ -48,7 +48,9 @@ $eis_dev_conf["status"]=array(
 	"sim_type"  => "off-grid",			// current simulation type: off-grid or grid-connected
 	"sim_devices"=> array(),			// current simulation active devices  deviceID=>array of device info
 	"sim_startime"=> 0,					// current simulation start timestamp
-	"sim_endtime"=> 0					// current simulation end timestamp
+	"sim_endtime"=> 0,					// current simulation end timestamp
+	"ul_blackout"=> false, 				// blackout condition on unprotected line in current simulation step
+	"pl_blackout"=> false 				// blackout condition on protected line in current simulation step
 );
 
 

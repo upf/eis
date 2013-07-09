@@ -49,7 +49,7 @@ if (!eis_save_status()) die ($eis_error." --> ".$eis_errmsg);
 $info=$eis_dev_status["devicescan"];
 
 // print page headers
-print eis_page_header("eis master create","");
+print eis_page_header("eis master create","",null);
 print "<h3>create a new simulation</h3>\n";
 
 // proceed and start a new simulation (if requested)

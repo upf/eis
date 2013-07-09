@@ -32,7 +32,7 @@ if ($action=="analyse") {
 
 
 // print page headers
-print eis_page_header("eis master","");
+print eis_page_header("eis master","",null);
 
 // simulation data table
 $headers=array("ID","Name","Type","StartHour","Step (min)","Meteo Data","Price Data","Actions");
