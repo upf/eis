@@ -8,7 +8,6 @@
 // set script constants
 $header="eis system installer ver. 0.0.1 (jun2013, upf)\n   --> ";
 $footer="\n\n";
-$host="localhost";
 $eisdb="eis";
 $eisdb_user="eis";
 $eisdb_passwd=uniqid();
@@ -23,8 +22,14 @@ $mysql_passwd=$argv[2];
 
 // determine the running OS (Caution: this could break in the future!)  
 $osname=php_uname("s");
-if ($osname=="Darwin") $wwwdir=$wwwdir_mac; else $wwwdir=$wwwdir_linux;
-
+if ($osname=="Darwin") {
+	$wwwdir=$wwwdir_mac; 
+	$host="127.0.0.1";
+}
+else {
+	$wwwdir=$wwwdir_linux;
+	$host="localhost";
+}
 // get eis directory
 $eis_dir=substr(dirname(__FILE__),0,-4);
 

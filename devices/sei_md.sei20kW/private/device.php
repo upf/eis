@@ -38,15 +38,17 @@ function eis_device_simulate($callparam) {
 	if (!array_key_exists("windspeed",$callparam["meteo"])) return eis_error("system:parameterMissing","meteo['windspeed']");
 	if (!array_key_exists("cpower",$callparam)) return eis_error("system:parameterMissing","cpower");
 	// update energy in kWh
-	$eis_dev_status["genergy1"] = $eis_dev_status["genergy1"] + $eis_dev_status["gpower1"]*$timestep/3600000.0;
+	for ($p=1;$p<4;$p++)
+		$eis_dev_status["genergy$p"] = $eis_dev_status["genergy$p"] + $eis_dev_status["gpower$p"]*$timestep/3600000.0;
 	// update generated power	
 	if ($eis_dev_status["power"]) {
-		$gpower1=compute_power($callparam["meteo"]["windspeed"]);
-		// check if is off-grid
-		if ($eis_dev_status["sim_type"]=="off-grid" and $callparam["cpower"][1]<$gpower1)
-			$eis_dev_status["gpower1"]=$callparam["cpower"][1];
-		else
-			$eis_dev_status["gpower1"]=$gpower1;
+		$gpower=intval(compute_power($callparam["meteo"]["windspeed"])/3);
+		for ($p=1;$p<4;$p++) 
+			// check if is off-grid
+			if ($eis_dev_status["sim_type"]=="off-grid" and $callparam["cpower"][$p]<$gpower)
+				$eis_dev_status["gpower$p"]=$callparam["cpower"][$p];
+			else
+				$eis_dev_status["gpower$p"]=$gpower;
 	}
 	return true;
 }
@@ -109,9 +111,10 @@ function compute_power($speed) {
 	// return to m/s from km/h
 	$speed=$speed/3.6;
 	// wind generator parameters
-	$cutin=3;
-	$cutoff=14;
-	$powercurve=array(495,720,1000,1480,1750,2100,2500,2640,2200,500,460,500);
+	$cutin=4;
+	$cutoff=25;
+	$powercurve=
+		array(30,1040,3320,5280,7880,10950,14110,17280,20000,20000,20000,20000,20000,20000,20000,20000,20000,20000,20000,20000,20000,20000);
 	// check if it is not generating
 	if ($speed<$cutin or $speed>$cutoff) return 0;
 	// else compute power possibly with interpolation

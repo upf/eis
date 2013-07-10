@@ -8,7 +8,7 @@
 // deviceID (the name of the directory where it is) and implementation version
 $eis_dev_conf["ID"]=basename(substr(dirname(__FILE__),0,-8));
 $eis_dev_conf["version"]="0.0.1";		
-$eis_dev_conf["date"]="2013-13-06";		
+$eis_dev_conf["date"]="2013-06-13";		
 $eis_dev_conf["author"]="vitofusco";
 
 // device dir absolute path (terminated without /)

@@ -172,9 +172,10 @@ function eis_exec($calldata) {
 			if ($eis_dev_conf["type"]=="load" or $eis_dev_conf["type"]=="generator") {
 				if (!array_key_exists("meteo",$callparam)) return eis_error_msg("system:parameterMissing","meteo");
 				if (!array_key_exists("blackout",$callparam)) return eis_error_msg("system:parameterMissing","blackout");
-				if ($callparam["blackout"] and !$eis_dev_status["blackout"]) {
+				// blackout management: after it device will be powered at the same state of blackout time
+				if ($callparam["blackout"] and !$eis_dev_status["blackout"] and $eis_dev_status["power"]) {
 					eis_signal(array("cmd"=>"poweroff"));
-					$eis_dev_status["blackout"]=true;
+					$eis_dev_status["blackout"]=true;	
 				}
 				if (!$callparam["blackout"] and $eis_dev_status["blackout"]) {
 					eis_signal(array("cmd"=>"poweron"));

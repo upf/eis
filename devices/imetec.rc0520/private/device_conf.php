@@ -25,16 +25,16 @@ $eis_dev_conf["ifport"]=41000;
 $eis_dev_conf["class"]="bathroom_heater";
 
 // device short description
-$eis_dev_conf["description"]="1-phase portable bathroom electric heater with 2 power levels (1 or 2 kW)";
+$eis_dev_conf["description"]="Imetec portable bathroom electric heater (2 power levels: 1 or 2 kW)";
 
 // device electrical type: "load", "generator" or "load&gen"
 $eis_dev_conf["type"]="load";
 
 // max consumed power for each phase (in watts)
 // set to zero for unused phase(s)
-$eis_dev_conf["cpower1"]=5000;	
-$eis_dev_conf["cpower2"]=5000;
-$eis_dev_conf["cpower3"]=5000;
+$eis_dev_conf["cpower1"]=2000;	
+$eis_dev_conf["cpower2"]=2000;
+$eis_dev_conf["cpower3"]=2000;
 
 // -- device initial status array -- //
 
