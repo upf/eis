@@ -5,6 +5,8 @@
 // available into global var: $eis_dev_conf
 // upf, May2013
 
+/////////// mandatory configuration fields ///////////
+
 // deviceID (the name of the directory where it is) and implementation version
 $eis_dev_conf["ID"]=basename(substr(dirname(__FILE__),0,-8));
 $eis_dev_conf["version"]="0.0.2";		
@@ -30,6 +32,14 @@ $eis_dev_conf["description"]="standard simulation master device";
 // device electrical type: "load", "generator", "load&gen" or "virtual"
 $eis_dev_conf["type"]="virtual";
 
+
+/////////// available configurations ///////////
+
+// config = specific configuration description
+$eis_dev_conf["configurations"]=array(
+	// default configuration
+	"default" => array ("config"=>"default configuration")
+);
 
 // -- device initial status array -- //
 

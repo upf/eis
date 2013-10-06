@@ -12,47 +12,22 @@ include($eis_conf["path"]."/system/eis_interface_lib.php");
 $thispage="http://".$_SERVER["SERVER_NAME"].$_SERVER["SCRIPT_NAME"];
 $thisdevice=$eis_dev_conf["ID"]."@".$_SERVER["SERVER_NAME"];
 
-// process callbacks from page
-if (eis_callback("enable")) {
-    eis_dev_call($thisdevice,"signal",$_REQUEST["enable"],array(),$outputpar);
-    die();
-}
-if (eis_callback("power")) {
-    eis_dev_call($thisdevice,"signal",$_REQUEST["power"],array(),$outputpar);
-    die();
-}
-
 // create a realtime interface handler
-// requires the Javascript function "eis_updatepage(status)" be defined into the page
+// if custom widgets are defined, requires the Javascript function "eis_updatepage(status)" be defined into the page
 eis_realtime_handler();
+
+// use widgets
+eis_realtime_widgets();
 
 
 //////////// page creation ////////////
 
-// set page headers, put here any additional needed headers (e.g. RGraph includes) 
-$headers='
-    <script src="../lib/RGraph/libraries/RGraph.common.core.js" ></script>
-    <script src="../lib/RGraph/libraries/RGraph.common.dynamic.js" ></script>
-    <script src="../lib/RGraph/libraries/RGraph.gauge.js" ></script>
-    <script src="../lib/RGraph/libraries/RGraph.led.js" ></script>
-    <script src="../lib/RGraph/libraries/RGraph.thermometer.js" ></script>
-    <script src="../lib/RGraph/libraries/RGraph.vprogress.js" ></script>
-    <!--[if lt IE 9]><script src="../excanvas/excanvas.js"></script><![endif]-->
-    <script src="../lib/RGraph/libraries/RGraph.common.effects.js"></script>
-    <script src="../lib/jquery.min.js"></script>
-    ';
-// output standard eis page 
-print eis_page_header($eis_dev_conf["ID"],$headers,"grid.png");
-// timestamp field
-print "<h3><div id='timestamp'></div></h3>\n";     
-// enable/disable buttons
-print "<img id='enabled' align='middle' height=25 width=25>
-        <input type='button' value='enable' onClick=\"eis_callback('enable','enable');\" />
-        <input type='button' value='disable' onClick=\"eis_callback('enable','disable');\" /> ".eis_spaces(8)."\n";
-// power on/off buttons
-print "<img id='power' align='middle' height=25 width=25> 
-        <input type='button' value='connect' onClick=\"eis_callback('power','poweron');\" />
-        <input type='button' value='disconnect' onClick=\"eis_callback('power','poweroff');\" />\n";
+// output page
+print eis_page_header($eis_dev_conf["ID"],"");
+// output some useful widgets
+print "<h3>".eis_widget_timestamp("Simulation time: ")."</h3>";
+print eis_widget_enable().eis_spaces(6).eis_widget_poweron().eis_spaces(6);
+print "<b>".eis_widget_text("Grid status: ","gridstatus")."</b><br><br>\n";
 // print gauges and labels table
 print "<br><br><table style='width:100%'><tr>\n";
 for($i=1;$i<4;$i++) print "<td style='text-align:center'><canvas id='power$i' width=270 height=270>[No canvas support]</canvas></td>\n";
@@ -63,14 +38,6 @@ print "</tr></table><br>\n";
 
 //////////// page initialization ////////////
 print "<script>\n"; 
-// set timestamp field
-print "document.getElementById('timestamp').innerHTML = 'simulation time: '+eis_date(".$eis_dev_status["timestamp"].");\n";
-// set enable field
-if ($eis_dev_status["enabled"]) $enabled="../lib/red-on.png"; else $enabled="../lib/red-off.png"; 
-print "document.getElementById('enabled').src='$enabled';\n";
-// set power field
-if ($eis_dev_status["power"]) $power="../lib/green-on.png"; else $power="../lib/green-off.png"; 
-print "document.getElementById('power').src='$power';\n";
 // set gauges parameters and draw gauges and labels
 for($i=1;$i<4;$i++) {
     $oldstatus=$eis_dev_status;
@@ -121,17 +88,6 @@ print "</script>\n";
         var e=0.0;
         for (i in status)
             switch(i) {
-                case "timestamp":
-                    document.getElementById('timestamp').innerHTML = "simulation time: "+eis_date(status[i]);
-                    break;
-                case "enabled":
-                    if (status[i]) s="../lib/red-on.png"; else s="../lib/red-off.png"; 
-                    document.getElementById('enabled').src = s;
-                    break;
-                case "power":
-                    if (status[i]) s="../lib/green-on.png"; else s="../lib/green-off.png"; 
-                    document.getElementById('power').src = s;
-                    break;
                 case "cpower1": cpower1=status[i]; break;
                 case "cpower2": cpower2=status[i]; break;
                 case "cpower3": cpower3=status[i]; break;

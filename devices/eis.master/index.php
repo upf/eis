@@ -32,15 +32,15 @@ if ($action=="analyse") {
 
 
 // print page headers
-print eis_page_header("eis master","",null);
+print eis_page_header("eis master","");
 
 // simulation data table
-$headers=array("ID","Name","Type","StartHour","Step (min)","Meteo Data","Price Data","Actions");
+$headers=array("ID","Name","Type","StartHour","Step (min)","Meteo Data","Actions");
 $rows=array();
 $query="SELECT * FROM ".$eis_dev_conf["tablepfx"]."_simulations ORDER BY timestamp ASC";
 if (!($result=$eis_mysqli->query($query))) die("master:cannotLoadSimulation: ".$eis_mysqli->error);
 while ($row=$result->fetch_array(MYSQLI_ASSOC)) {
-	$rows[]=array($row["simulID"],$row["name"],$row["type"],$row["starthour"],$row["step"],$row["meteo"],$row["price"],
+	$rows[]=array($row["simulID"],$row["name"],$row["type"],$row["starthour"],$row["step"],$row["meteo"],
 		"<a href='$page?sim_id=".$row["simulID"]."&action=analyse'>analyse</a>, 
 		 <a href='$page?sim_id=".$row["simulID"]."&action=restart'>restart</a>, 
 		 <a href='#' onclick=\"sim_delete('".$row["simulID"]."')\">delete</a>");

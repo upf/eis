@@ -1,0 +1,43 @@
+# -- help file for a device --
+# sintax:
+#    comments: lines beginning with a "#" char
+#    sections:  {** your_section_name **}
+#    commands:  [** your_command_name **]
+#    signals :  (** you_signal_name **)
+
+
+# write here your device main description
+{**Description**}
+This is a photovoltaic simulator, whith this device it is possible to simulate a pv plant which can generate
+maximum 6KWp.
+
+
+# write here your device commands description
+{**Commands**}
+
+
+[**simulate**]
+Whith this command we can pass to the device the timestamp, radiation, temperature, number phases
+input parameters:
+	timestamp (integer, mandatory): the current timestamp for the simulation step
+the sintax of command is:
+simulate timestamp value radiation value temperature value nphase value ( 1 or 3 )
+
+output parameters:
+	the current status array
+specific errors: none
+
+
+# write here your device signals description
+{**Signals**}
+
+
+(**poweron**)
+This is template for the mandatory "poweron" command. It sets the power status to "on".
+input parameters: none
+
+(**poweroff**)
+This is template for the mandatory "poweroff" command. It sets the power status to "off", zeroing also the cpowers.
+input parameters: none
+
+

@@ -41,6 +41,7 @@ function eis_getdevices($mode) {
 	if (!($result=$eis_mysqli->query("SELECT * FROM devices"))) return eis_error("system:cannotReadDatabase",$eis_mysqli->error);
 	while ($data=$result->fetch_array(MYSQLI_ASSOC)) {
 		if ($mode!="all" and $data["installed"]!="yes") continue;
+		$data["configurations"]=eis_decode($data["configurations"]);
 		$devdb[$data["id"]]=$data;
 	}
 	return $devdb;

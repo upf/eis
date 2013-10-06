@@ -5,6 +5,8 @@
 // available into global var: $eis_dev_conf
 // upf, May2013
 
+/////////// mandatory configuration fields ///////////
+
 // deviceID (the name of the directory where it is) and implementation version
 $eis_dev_conf["ID"]=basename(substr(dirname(__FILE__),0,-8));
 $eis_dev_conf["version"]="0.0.1";		// 3 numbers separated by full stop
@@ -30,11 +32,21 @@ $eis_dev_conf["description"]="Imetec portable bathroom electric heater (2 power 
 // device electrical type: "load", "generator" or "load&gen"
 $eis_dev_conf["type"]="load";
 
-// max consumed power for each phase (in watts)
-// set to zero for unused phase(s)
-$eis_dev_conf["cpower1"]=2000;	
-$eis_dev_conf["cpower2"]=2000;
-$eis_dev_conf["cpower3"]=2000;
+
+/////////// available configurations ///////////
+
+// config = specific configuration description
+// cpowerX = max consumed power for each phase (in watts), set to zero for unused phase(s)
+$eis_dev_conf["configurations"]=array(
+	// default configuration
+	"default" => array (
+		"config"=>"default configuration",
+		"cpower1"=>2000,
+		"cpower2"=>2000,	
+		"cpower3"=>2000	
+	)
+);
+
 
 // -- device initial status array -- //
 
@@ -50,7 +62,7 @@ $eis_dev_conf["status"]=array(
 	"cenergy2"	=> 0, 					// same for phase 2
 	"cenergy3"	=> 0, 					// same for phase 3
 	"connected" => 1, 					// phase (1,2,or 3) where it is connected
-	"powerlevel"=> 0.5 					// power level (from 0.0 to 1.0) default half power mode
+	"fullpower"=> false 				// true = full power mode
 );
 
 

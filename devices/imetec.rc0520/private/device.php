@@ -44,9 +44,10 @@ function eis_device_simulate($callparam) {
 function eis_device_poweron() {
 	global $eis_conf,$eis_dev_conf,$eis_dev_status,$eis_mysqli;
 	// set the powers to their defaults
+	if ($eis_dev_status["fullpower"]) $powerlevel=1; else $powerlevel=0.5; 
 	for ($p=1; $p<4;$p++)
 		if ($p==$eis_dev_status["connected"]) 
-			$eis_dev_status["cpower".$p] = $eis_dev_conf["cpower".$p]*$eis_dev_status["powerlevel"];
+			$eis_dev_status["cpower".$p] = $eis_dev_conf["cpower".$p]*$powerlevel;
 	return true;
 }
 
@@ -69,9 +70,10 @@ function eis_device_exec($calldata) {
 			if (!array_key_exists("phase",$callparam)) return eis_error_msg("system:parameterMissing","phase");
 			if ($callparam["phase"]<1 or $callparam["phase"]>3) $phase=1; else $phase=$callparam["phase"];
 			$eis_dev_status["connected"]=$phase;
+			if ($eis_dev_status["fullpower"]) $powerlevel=1; else $powerlevel=0.5; 
 			for($p=1;$p<4;$p++)
 				if ($p==$phase)
-					$eis_dev_status["cpower$p"]=$eis_dev_conf["cpower".$p]*$eis_dev_status["powerlevel"];
+					$eis_dev_status["cpower$p"]=$eis_dev_conf["cpower".$p]*$powerlevel;
 				else
 					$eis_dev_status["cpower$p"]=0;
 			$returnmsg=
@@ -93,15 +95,15 @@ function eis_device_signal($calldata) {
 	switch ($calldata["cmd"]) {
 		// set power level to 1
 		case "halfpower":
-			$eis_dev_status["powerlevel"]=0.5;
+			$eis_dev_status["fullpower"]=false;
 			$p=$eis_dev_status["connected"];
-			$eis_dev_status["cpower".$p] = $eis_dev_conf["cpower".$p]*$eis_dev_status["powerlevel"];
+			$eis_dev_status["cpower".$p] = $eis_dev_conf["cpower".$p]*0.5;
 			break;
 		// set power level to 2
 		case "fullpower":
-			$eis_dev_status["powerlevel"]=1;
+			$eis_dev_status["fullpower"]=true;
 			$p=$eis_dev_status["connected"];
-			$eis_dev_status["cpower".$p] = $eis_dev_conf["cpower".$p]*$eis_dev_status["powerlevel"];
+			$eis_dev_status["cpower".$p] = $eis_dev_conf["cpower".$p];
 			break;
 		default:
 			// manage unknown command

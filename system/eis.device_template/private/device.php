@@ -36,34 +36,26 @@ function eis_device_simulate($callparam) {
 	$timestep=$eis_dev_status["sim_step"]*60;
 	// update assorbed energy in kWh
 	for ($p=1; $p<4;$p++)
-		if (array_key_exists("cpower".$p,$eis_dev_status)) $eis_dev_status["cenergy".$p] += $eis_dev_status["cpower".$p]*$timestep/3600000.0;
-	// update generated energy in kWh
-	for ($p=1; $p<4;$p++)
-		if (array_key_exists("gpower".$p,$eis_dev_status)) $eis_dev_status["genergy".$p] += $eis_dev_status["gpower".$p]*$timestep/3600000.0;
-	// update powers
-		// constant powers, nothing to do
+		$eis_dev_status["cenergy".$p] += $eis_dev_status["cpower".$p]*$timestep/3600000.0;
 	return true;
 }
 
 // poweron signal device specific  code
 function eis_device_poweron() {
 	global $eis_conf,$eis_dev_conf,$eis_dev_status,$eis_mysqli;
-	// set the powers to theis defaults
-	for ($p=1; $p<4;$p++) {
-		if (array_key_exists("cpower".$p,$eis_dev_status)) $eis_dev_status["cpower".$p] = $eis_dev_conf["status"]["cpower".$p];
-		if (array_key_exists("gpower".$p,$eis_dev_status)) $eis_dev_status["gpower".$p] = $eis_dev_conf["status"]["gpower".$p];
-	}
+	// set the powers to their defaults
+	if ($eis_dev_status["fullpower"]) $powerlevel=1; else $powerlevel=0.5; 
+	for ($p=1; $p<4;$p++)
+		if ($p==$eis_dev_status["connected"]) 
+			$eis_dev_status["cpower".$p] = $eis_dev_conf["cpower".$p]*$powerlevel;
 	return true;
 }
 
-// poweroff signal device specific  code
+// poweroff signal device specific code
 function eis_device_poweroff() {
 	global $eis_conf,$eis_dev_conf,$eis_dev_status,$eis_mysqli;
 	// set the powers to zero
-	for ($p=1; $p<4;$p++) {
-		if (array_key_exists("cpower".$p,$eis_dev_status)) $eis_dev_status["cpower".$p] = 0;
-		if (array_key_exists("gpower".$p,$eis_dev_status)) $eis_dev_status["gpower".$p] = 0;
-	}
+	for ($p=1; $p<4;$p++) $eis_dev_status["cpower".$p] = 0;
 	return true;
 }
 
@@ -74,13 +66,19 @@ function eis_device_exec($calldata) {
 	global $eis_conf,$eis_dev_conf,$eis_dev_status;
 	$callparam=$calldata["param"];
 	switch ($calldata["cmd"]) {
-		// put other commands and related code here
-		// case "mycommand":
-				// your command code here
-				// return success: $returnmsg=eis_ok_msg(youroutputparam_array);
-				// return failure: $returnmsg=eis_error_msg(yourerror,yourerrormessage);
-				// break;
-
+		case "connect":
+			if (!array_key_exists("phase",$callparam)) return eis_error_msg("system:parameterMissing","phase");
+			if ($callparam["phase"]<1 or $callparam["phase"]>3) $phase=1; else $phase=$callparam["phase"];
+			$eis_dev_status["connected"]=$phase;
+			if ($eis_dev_status["fullpower"]) $powerlevel=1; else $powerlevel=0.5; 
+			for($p=1;$p<4;$p++)
+				if ($p==$phase)
+					$eis_dev_status["cpower$p"]=$eis_dev_conf["cpower".$p]*$powerlevel;
+				else
+					$eis_dev_status["cpower$p"]=0;
+			$returnmsg=
+				eis_ok_msg(array("cpower1"=>$eis_dev_status["cpower1"],"cpower2"=>$eis_dev_status["cpower2"],"cpower3"=>$eis_dev_status["cpower3"]));
+			break;
 		default:
 			// manage unknown command
 			$returnmsg=eis_error_msg("system:unknownCommand",$calldata["cmd"]);
@@ -95,12 +93,18 @@ function eis_device_signal($calldata) {
 	global $eis_conf,$eis_dev_conf,$eis_dev_status;
 	$callparam=$calldata["param"];
 	switch ($calldata["cmd"]) {
-		// put other signals and related code here
-		// case "mysignal":
-				// your signal code here
-				// in case of error, use eis_log() to log error
-				// break;
-
+		// set power level to 1
+		case "halfpower":
+			$eis_dev_status["fullpower"]=false;
+			$p=$eis_dev_status["connected"];
+			$eis_dev_status["cpower".$p] = $eis_dev_conf["cpower".$p]*0.5;
+			break;
+		// set power level to 2
+		case "fullpower":
+			$eis_dev_status["fullpower"]=true;
+			$p=$eis_dev_status["connected"];
+			$eis_dev_status["cpower".$p] = $eis_dev_conf["cpower".$p];
+			break;
 		default:
 			// manage unknown command
 			eis_log(1,"system:unknownSignal --> ".$calldata["cmd"]);

@@ -5,6 +5,8 @@
 // available into global var: $eis_dev_conf
 // upf, May2013
 
+/////////// mandatory configuration fields ///////////
+
 // deviceID (the name of the directory where it is) and implementation version
 $eis_dev_conf["ID"]=basename(substr(dirname(__FILE__),0,-8));
 $eis_dev_conf["version"]="0.0.1";		
@@ -31,13 +33,19 @@ $eis_dev_conf["description"]="S.E.I. 20 kW wind turbine";
 $eis_dev_conf["type"]="generator";
 
 
-// max consumed power for each phase (in watts)
-// set to zero for unused phase(s)
-// 20kW / 3 = 6666.66... watts = 6667
-$eis_dev_conf["gpower1"]=6667;
-$eis_dev_conf["gpower2"]=6667;
-$eis_dev_conf["gpower3"]=6667;
+/////////// available configurations ///////////
 
+// config = specific configuration description
+// gpowerX = max generated power for phase X (in watts)
+$eis_dev_conf["configurations"]=array(
+	// default configuration
+	"default" => array (
+		"config"=>"default configuration",
+		"gpower1"=>6666,
+		"gpower2"=>6666,
+		"gpower3"=>6666,
+	)
+);
 
 // -- device initial status array -- //
 

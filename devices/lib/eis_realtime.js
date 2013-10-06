@@ -10,10 +10,15 @@ eis real time interface Javascript:
 
 // return a formatted data string from a UNIX timestamp
 function eis_date(timestamp) {
+    var day=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var m=new Array("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec");
     var d = new Date(timestamp*1000);
-    return d.getDate()+"-"+(d.getMonth()+1)+"-"+d.getFullYear()+"  "+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
+    return day[d.getDay()]+" &nbsp "+d.getDate()+"-"+m[d.getMonth()]+"-"+d.getFullYear()+" &nbsp "+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
 }
 
+// global variables
+var eis_widgets=[];
+var idata=new Array();  // current input status array
 
 // realtime processing code (long poll)
 var httpchan;
@@ -25,11 +30,17 @@ else
     httpchan=new ActiveXObject("Microsoft.XMLHTTP");    // code for IE6, IE5
 
 httpchan.onreadystatechange=function() {
-    var d;
+    var i,status;
     if (httpchan.readyState==4 && httpchan.status==200) {
         // process JSON data
-        d = eval( "("+httpchan.responseText+")" );
-        eis_updatepage(d);
+        idata = eval( "("+httpchan.responseText+")" );
+        // serve widget status vars
+        for (i in eis_widgets) {
+            status=eis_widgets[i];
+            if (status in idata) window[i](idata[status]);
+        }
+        // serve all other status vars
+        if (typeof(eis_updatepage)==='function') eis_updatepage(idata);
         // and reopen http channel again
         httpchan.open("GET",page+"?realtime=1",true);
         httpchan.send();

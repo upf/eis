@@ -21,7 +21,6 @@ function eis_device_install($calldata) {
 		  `starthour` int(10) unsigned NOT NULL,
 		  `step` int(10) unsigned NOT NULL,
 		  `meteo` varchar(64) NOT NULL,
-		  `price` varchar(64) NOT NULL,
 		  `name` varchar(256) NOT NULL,
 		  `devices` text NOT NULL,
 		  `startime` int(10) unsigned NOT NULL,

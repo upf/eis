@@ -16,8 +16,7 @@ CREATE TABLE IF NOT EXISTS `devices` (
   `type` varchar(256) NOT NULL,
   `ifport` int(10) unsigned NOT NULL,
   `description` text NOT NULL,
-  `cpower` varchar(256) NOT NULL,
-  `gpower` varchar(256) NOT NULL,
+  `configurations` text NOT NULL,
   `published` varchar(5) NOT NULL,
   `installed` varchar(5) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

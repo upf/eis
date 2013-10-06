@@ -12,7 +12,7 @@ function eis_master_savesim($simulation) {
 	global $eis_dev_conf,$eis_mysqli;
 	eis_clear_error();
 	extract($simulation,EXTR_OVERWRITE);
-	$query="INSERT INTO ".$eis_dev_conf["tablepfx"]."_simulations VALUES ('$id',".time().",'$type',$hour,$step,'$meteo','$price',
+	$query="INSERT INTO ".$eis_dev_conf["tablepfx"]."_simulations VALUES ('$id',".time().",'$type',$hour,$step,'$meteo',
 		'$name','".eis_encode($devices)."',$startime,$endtime)";
 	if (!$eis_mysqli->query($query)) return eis_error("master:cannotSaveSimulation",$eis_mysqli->error);
 	return true;
@@ -31,7 +31,6 @@ function eis_master_loadsim($simulationID) {
     $eis_dev_status["sim_id"]=$row["simulID"];
     $eis_dev_status["sim_name"]=$row["name"];
     $eis_dev_status["sim_meteo"]=$row["meteo"];
-    $eis_dev_status["sim_price"]=$row["price"];
     $eis_dev_status["sim_hour"]=$row["starthour"];
     $eis_dev_status["sim_step"]=$row["step"];
     $eis_dev_status["sim_type"]=$row["type"];
@@ -68,13 +67,15 @@ function eis_master_getdevices($network) {
     	// ************* this part has to be written
     }
 	foreach ($info as $d=>$i)
-	    if (eis_dev_call($d."@".$i["host"],"exec","getstatus",array("fields"=>"cline,gline"),$outpar)) { 
+	    if (eis_dev_call($d."@".$i["host"],"exec","getstatus",array("fields"=>"cline,gline,configID"),$outpar)) { 
 	        if (array_key_exists("cline",$outpar)) $info[$d]["cline"]=$outpar["cline"]; else $info[$d]["cline"]="-----";
 	        if (array_key_exists("gline",$outpar)) $info[$d]["gline"]=$outpar["gline"]; else $info[$d]["gline"]="-----";
+	        $info[$d]["configID"]=$outpar["configID"];
 	    }
 	    else {
 	        $info[$d]["cline"]="error";
 	        $info[$d]["gline"]="error";
+	        $info[$d]["configID"]="error";
 	    }
 	return $info;
 }
@@ -82,12 +83,12 @@ function eis_master_getdevices($network) {
 // check the devicescan status array for simulation rule violations (see code for explanation).
 // only "selected" devices are cosnidered
 // return an array of strings describing one violation each or false if no violation found 
-function eis_master_ruleviolations() {
+function eis_master_ruleviolations(&$sim_type) {
 	global $eis_dev_conf,$eis_dev_status;
 	$violations=array();
 	$devicesinfo=$eis_dev_status["devicescan"];
 	// scan device info array and implement some rules
-	$grid=$auxgenerator=$storage=$master=$meteo=0;
+	$grid=$auxgen=$storage=$master=$meteo=0;
 	$unprotectedloads=$protected=0;
 	foreach ($devicesinfo as $d=>$i) {
 		if (!array_key_exists("selected",$i) or !$i["selected"]) continue;
@@ -106,6 +107,7 @@ function eis_master_ruleviolations() {
 	    		$violations[]="$d: only 1 'grid' class device is allowed";
 	    	else {
 	    		$grid++;
+	    		$sim_type="grid-connected";
 	    		if ($i["cline"]=="protected" or $i["gline"]=="protected")
 	    			$violations[]="$d 'grid' device must be connected to the unprotected line";
 	    	}
@@ -118,14 +120,22 @@ function eis_master_ruleviolations() {
 	    			$violations[]=" $d 'electrical_storage' device must be connected with cline=>unprotected  gline=>protected";
 	    	}
 	    if ($i["class"]=="auxiliary_generator")
-	    	if ($i["cline"]=="protected" or $i["gline"]=="protected")
-	    		$violations[]="$d 'auxiliary_generator' device must be connected to the unprotected line";
-	    if ($i["cline"]=="protected") $protected++; else $unprotectedloads++;
+	    	if ($auxgen) 
+	    		$violations[]="$auxgen: only 1 'auxiliary_generator' class device is allowed";
+	    	else {
+	    		$auxgen++;
+	    		$sim_type="off-grid";
+	    		if ($i["gline"]=="protected")
+	    			$violations[]="$d 'auxiliary_generator' device must be connected to the unprotected line";
+	    	}
+	    if ($i["cline"]=="protected") $protected++; else if ($i["cline"]=="unprotected" and $i["class"]!="electrical_storage") $unprotectedloads++;
 	    if ($i["gline"]=="protected") $protected++;
 	}
 	// implement other rules
 	if ($meteo==0) $violations[]="no 'meteo_station' class devices, one is necessary";
 	if ($grid==0 and $storage==0) $violations[]="no 'grid' or 'electrical_storage' class devices, one is necessary";
+	if ($grid!=0 and $auxgen!=0) $violations[]="both 'grid' and 'auxiliary_generator' class devices, only one can be selected";
+	if ($auxgen!=0 and $storage==0) $violations[]="'auxiliary_generator' class devices requires one 'storage' class device";
 	if ($protected>0 and $storage==0) $violations[]="$protected device(s) connected to the 'protected' line without one 'electrical_storage' device";
 	if ($unprotectedloads>0 and $grid==0) $violations[]="$unprotected load type device(s) connected to the 'unprotected' line without one 'grid' device";
 	if (!array_key_exists("selected",$devicesinfo[$eis_dev_conf["ID"]]) or !$devicesinfo[$eis_dev_conf["ID"]]["selected"])

@@ -13,6 +13,8 @@ if (!$eis_socket) eis_log(1,"system:cannotOpenInterface --> .$errno - $errstr");
 
 // init predefined device status vars
 eis_default_status();
+// load default configuration
+foreach($eis_dev_conf["configurations"][$eis_dev_status["configID"]] as $k=>$v) $eis_dev_conf[$k]=$v;
 
 
 
@@ -53,6 +55,9 @@ function eis_set_predefined_var_status() {
 	$eis_dev_status["sim_id"]="0000";		// current simulation id
 	$eis_dev_status["sim_step"]=10;			// current simulation step in minutes
 	$eis_dev_status["sim_type"]="off-grid";	// current simulation type: off-grid or grid-connected
+	$eis_dev_status["sim_startime"]=0;		// current simulation start timestamp
+	$eis_dev_status["sim_endtime"]=0;		// current simulation end timestamp
+	$eis_dev_status["configID"]="default";	// current simulation device configuration ID
 	$eis_dev_status["blackout"]=false;		// current line blackout status
 }
 
@@ -71,6 +76,11 @@ function eis_load_status() {
 	if (!array_key_exists("status",$row)) return eis_error("system:wrongStoredStatus","status field missing in mysql table");
 	// decode status array
 	$eis_dev_status=eis_decode($row["status"]);
+	// load current configuration
+	if (!array_key_exists($eis_dev_status["configID"],$eis_dev_conf["configurations"])) 
+		return eis_error("system:wrongConfigID",$eis_dev_status["configID"]);
+	else 
+		foreach($eis_dev_conf["configurations"][$eis_dev_status["configID"]] as $k=>$v) $eis_dev_conf[$k]=$v;
 	// everything is ok, return true
 	return true;
 }
@@ -96,8 +106,9 @@ function eis_save_status() {
 // reload default configuration status 
 function eis_default_status() {
 	global $eis_dev_conf,$eis_dev_status;
-	$eis_dev_status=$eis_dev_conf["status"];
 	eis_set_predefined_var_status();
+	reset($eis_dev_conf["status"]);
+	foreach($eis_dev_conf["status"] as $k=>$v) $eis_dev_status[$k]=$v;
 }
 
 //////// device command and signal execution functions
@@ -152,15 +163,18 @@ function eis_exec($calldata) {
 		// in case of success returns actual status array
 		case "init":
 			if (!array_key_exists("timestamp",$callparam)) return eis_error_msg("system:parameterMissing","timestamp");
+			if (!array_key_exists("configID",$callparam)) return eis_error_msg("system:parameterMissing","configID");
 			if (!array_key_exists("sim_id",$callparam)) return eis_error_msg("system:parameterMissing","sim_id");
 			if (!array_key_exists("sim_step",$callparam)) return eis_error_msg("system:parameterMissing","sim_step");
 			if (!array_key_exists("sim_type",$callparam)) return eis_error_msg("system:parameterMissing","sim_type");
-			if (!array_key_exists("cline",$callparam)) return eis_error_msg("system:parameterMissing","cline");
-			if (!array_key_exists("gline",$callparam)) return eis_error_msg("system:parameterMissing","gline");
+			if (!array_key_exists("sim_endtime",$callparam)) return eis_error_msg("system:parameterMissing","sim_endtime");
 			eis_default_status();
 			$eis_dev_status["masterurl"]=$calldata["from"];
-			reset($callparam);
+			$eis_dev_status["sim_startime"]=$callparam["timestamp"];
 			foreach ($callparam as $k=>$v) $eis_dev_status[$k]=$v;
+			// load current configuration
+			foreach($eis_dev_conf["configurations"][$eis_dev_status["configID"]] as $k=>$v) $eis_dev_conf[$k]=$v;
+			// call specific device init code
 			eis_clear_error();
 			if (!eis_device_init($callparam)) return eis_error_msg($eis_error,$eis_errmsg);
 			$returnmsg=eis_ok_msg($eis_dev_status);
@@ -168,8 +182,8 @@ function eis_exec($calldata) {
 		// simulate command: do the simulation step at time timestamp, on success return some device dependent data
 		case "simulate":
 			if (!array_key_exists("timestamp",$callparam)) return eis_error_msg("system:parameterMissing","timestamp");
-			// check parameters for loads and generators
-			if ($eis_dev_conf["type"]=="load" or $eis_dev_conf["type"]=="generator") {
+			// auto check and blackout management for loads and generators
+			if ($eis_dev_conf["type"]=="load" or ($eis_dev_conf["type"]=="generator" and $eis_dev_conf["class"]!="auxiliary_generator")) {
 				if (!array_key_exists("meteo",$callparam)) return eis_error_msg("system:parameterMissing","meteo");
 				if (!array_key_exists("blackout",$callparam)) return eis_error_msg("system:parameterMissing","blackout");
 				// blackout management: after it device will be powered at the same state of blackout time
@@ -212,6 +226,29 @@ function eis_exec($calldata) {
 			if (array_key_exists("status",$callparam) and $callparam["status"]=="current")
 				$ret["status"]=$eis_dev_status;
 			$returnmsg=eis_ok_msg($ret);
+			break;
+		// returns an array of possible device configurations for simulation as "config_ID"=>"description"
+		case "getconfiginfo":
+			if (array_key_exists("configurations",$eis_dev_conf))
+				$returnmsg=eis_ok_msg($eis_dev_conf["configurations"]);
+			else
+				$returnmsg=eis_ok_msg(array("default"=>array("description"=>"default configuration")));
+			break;
+		// setconfig command: select a configuration ID, returns an error on failure
+		case "setconfig":
+			if (!array_key_exists("configID",$callparam)) return eis_error_msg("system:parameterMissing","configID");
+			if (array_key_exists("configurations",$eis_dev_conf)) {
+				if(!array_key_exists($callparam["configID"],$eis_dev_conf["configurations"]))
+					return eis_error_msg("system:wrongConfigID",$callparam["configID"]);
+				else
+					$eis_dev_status["configID"]=$callparam["configID"];
+			}
+			else 
+				if ($callparam["configID"]=="default")
+					$eis_dev_status["configID"]="default";
+				else
+					return eis_error_msg("system:wrongConfigID",$callparam["configID"]);
+			$returnmsg=eis_ok_msg(null);
 			break;
 		// help command: returns the device help (if any) in a field named "help"
 		case "help":
@@ -265,15 +302,13 @@ function eis_signal($calldata) {
 		case "poweron":
 			$eis_dev_status["power"]=true;
 			eis_clear_error();
-			if (!eis_device_poweron())
-				eis_log(2,$eis_error."  ".$eis_errmsg);
+			if (!eis_device_poweron()) eis_log(2,$eis_error."  ".$eis_errmsg);
 			break;
-		// disable signal: power off the device
+		// power signal: power off the device
 		case "poweroff":
 			$eis_dev_status["power"]=false;
 			eis_clear_error();
-			if (!eis_device_poweroff())
-				eis_log(2,$eis_error."  ".$eis_errmsg);
+			if (!eis_device_poweroff()) eis_log(2,$eis_error."  ".$eis_errmsg);
 			break;
 		// other device specific signals
 		default:

@@ -165,6 +165,14 @@ if (isset($_REQUEST["action"]))
 					else
 						print "<br>cannot install $d: $eis_error  $eis_errmsg";
 			break;
+		// reset all devices
+		case "resetall":
+			reset($devinfo);
+			foreach ($devinfo as $d=>$i) 
+				if ($devinfo[$d]["installed"]=="yes")
+					if (!eis_call("http://".$_SERVER["SERVER_NAME"]."/eis/$d",time(),"eis.system","exec","reset",array(),$returnmsg))
+						print "<br>cannot reset $d: $eis_error  $eis_errmsg";
+			break;
 	}
 
 
@@ -174,7 +182,7 @@ if (!isset($_REQUEST["noscan"])) {
 	reset($devinfo);
 	foreach ($devinfo as $d=>$i) {
 		$query="INSERT INTO devices VALUES ('$d','".$i["version"]."','".$i["date"]."','".$i["author"]."','".$i["class"]."','".
-				$i["type"]."','".$i["ifport"]."','".$i["description"]."','".$i["cpower"]."','".$i["gpower"]."','".$i["published"]."','".$i["installed"]."')";
+				$i["type"]."','".$i["ifport"]."','".$i["description"]."','".eis_encode($i["configurations"])."','".$i["published"]."','".$i["installed"]."')";
 		if (!$mysqli->query($query)) die("cannot write database: ".$mysqli->error);
 	}
 }
@@ -191,11 +199,16 @@ foreach ($devinfo as $d=>$i) {
 	else
 		//$published="<a href='$page?id=$d&action=show'>no</a>";
 		$published="no";
-	$rows[]=array($device,$installed,$published,$i["version"],$i["date"],$i["author"],$i["class"],$i["type"],$i["ifport"],$i["description"]);	
+	$descr=$i["description"];
+	if (is_array($i["configurations"])) {
+		foreach($i["configurations"] as $k=>$v) $descr=$descr."<br>&nbsp &nbsp &nbsp &nbsp - configuration: ".$k; 
+	}
+	$rows[]=array($device,$installed,$published,$i["version"],$i["date"],$i["author"],$i["class"],$i["type"],$i["ifport"],$descr);	
 }
 print_datatable("Local devices:",$headers,$rows);
 print "<button onClick='window.location.href=\"$page\"'>rescan</button>\n";
 print " &nbsp&nbsp<button onClick='window.location.href=\"$page?action=installall\"'>install all</button>\n";
+print " &nbsp&nbsp<button onClick='window.location.href=\"$page?action=resetall\"'>reset all</button>\n";
 
 // ask for opening a console
 print "<br><br><b>Command line console:</b><br>\n";
@@ -229,7 +242,7 @@ function print_datatable($title,$headers,$rows) {
 	foreach ($rows as $row) {
 		print "<tr>";
 		foreach ($row as $j=>$f) {
-			if ($j==0) $a="left"; else $a="center";
+			if ($j==0 or $j==(sizeof($row)-1)) $a="left"; else $a="center";
 			print "<td style='text-align:$a'>&nbsp $f &nbsp</td>";
 		}
 		print "</tr>";
@@ -257,14 +270,7 @@ function get_local_device_info() {
 		$info[$d]["author"]=$eis_dev_conf["author"];
 		$info[$d]["description"]=$eis_dev_conf["description"];
 		$info[$d]["ifport"]=$eis_dev_conf["ifport"];
-		if (array_key_exists("cpower1",$eis_dev_conf)) $cpower1=$eis_dev_conf["cpower1"]; else $cpower1=0;
-		if (array_key_exists("cpower2",$eis_dev_conf)) $cpower2=$eis_dev_conf["cpower2"]; else $cpower2=0;
-		if (array_key_exists("cpower3",$eis_dev_conf)) $cpower3=$eis_dev_conf["cpower3"]; else $cpower3=0;
-		$info[$d]["cpower"]="$cpower1,$cpower2,$cpower3";
-		if (array_key_exists("gpower1",$eis_dev_conf)) $gpower1=$eis_dev_conf["gpower1"]; else $gpower1=0;
-		if (array_key_exists("gpower2",$eis_dev_conf)) $gpower2=$eis_dev_conf["gpower2"]; else $gpower2=0;
-		if (array_key_exists("gpower3",$eis_dev_conf)) $gpower3=$eis_dev_conf["gpower3"]; else $gpower3=0;
-		$info[$d]["gpower"]="$gpower1,$gpower2,$gpower3";
+		$info[$d]["configurations"]=$eis_dev_conf["configurations"];
 		}
 	return $info;
 }

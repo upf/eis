@@ -10,10 +10,37 @@
 // device installation function
 // return true on success, false on failure
 function eis_device_install($callparam) {
-	global $eis_conf,$eis_dev_conf,$eis_dev_status;
-	// put specific device installation code here
-	// in case of error, return eis_error(your_error,your_error_msg)
-	// device status will be saved after this call
+	global $eis_conf,$eis_dev_conf,$eis_dev_status,$eis_mysqli;
+	// create the required mysql table(s)
+	$table=$eis_dev_conf["tablepfx"]."_prices";
+	$eis_mysqli->query("DROP TABLE $table");
+	$query="CREATE TABLE IF NOT EXISTS `$table` (
+		  `priceID` varchar(64) NOT NULL,
+		  `description` varchar(256) NOT NULL,
+		  `prices` text NOT NULL
+		) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+	if (!$eis_mysqli->query($query)) return eis_error($eis_dev_conf["ID"].":cannotCreateDBTable",$eis_mysqli->error);
+	// load price plan data into mysql
+	foreach($eis_dev_conf["priceIDs"] as $id=>$d) {
+		$prices=array("buy"=>array(),"sell"=>array());
+		$count=0;
+		$data=file($eis_dev_conf["path"]."/private/$id.prices");
+		foreach ($data as $line) {
+		    $line=trim($line);
+		    // skip comments and blank lines
+		    if ($line=="" or $line[0]=="#") continue;
+		    // read prices
+		    $values=explode(";",$line);
+		    $count++;
+		    // first 7 are buy prices
+		    if ($count<=7) $prices["buy"][$count]=$values;
+		    // second 7 are sell prices
+		    if ($count>7) $prices["sell"][$count-7]=$values;
+		}
+		// save data into table
+		$query="INSERT INTO ".$eis_dev_conf["tablepfx"]."_prices VALUES ('$id','$d','".json_encode($prices)."')";
+		if (!$eis_mysqli->query($query)) return eis_error($eis_dev_conf["ID"].":cannotSavePricedata",$eis_mysqli->error);
+	}
 	return true;
 }
 
@@ -21,16 +48,13 @@ function eis_device_install($callparam) {
 // return true on success, false on failure
 function eis_device_init($callparam) {
 	global $eis_conf,$eis_dev_status,$eis_dev_conf;
-	// put specific device simulation initialization code here
-	// in case of error, return eis_error(your_error,your_error_msg)
-	// device status will be saved after this call
 	return true;
 }
 
 // device simulation step function
 // return true on success, false on failure
 function eis_device_simulate($callparam) {
-	global $eis_conf,$eis_dev_status,$eis_dev_conf;
+	global $eis_conf,$eis_dev_status,$eis_dev_conf,$eis_mysqli;
 	if (!array_key_exists("cpower",$callparam)) return eis_error("system:parameterMissing","cpower");
 	if (!array_key_exists("gpower",$callparam)) return eis_error("system:parameterMissing","gpower");
 	$timestamp=$callparam["timestamp"];
@@ -59,9 +83,20 @@ function eis_device_simulate($callparam) {
 		// update energy counters
 		$eis_dev_status["cenergy".$p] = $eis_dev_status["cenergy".$p] + $cenergy;
 		$eis_dev_status["genergy".$p] = $eis_dev_status["genergy".$p] + $genergy;
+		// update prices
+		$query="SELECT * FROM ".$eis_dev_conf["tablepfx"]."_prices WHERE priceID='".$eis_dev_conf["price"]."'";
+		if (!($result=$eis_mysqli->query($query))) return eis_error($eis_dev_conf["ID"].":cannotLoadPricedata",$eis_mysqli->error);
+		if (($result->num_rows!=1)) return eis_error($eis_dev_conf["ID"].":wrongStoredPricedata",print_r($row,true));
+		$row=$result->fetch_array(MYSQLI_ASSOC);
+		$prices=json_decode($row["prices"],true);
+		$dayweek=date("w",$timestamp);
+		if ($dayweek==0) $dayweek=7;
+		$hour=date("G",$timestamp);
+		$eis_dev_status["price_buy"]=$prices["buy"][$dayweek][$hour];
+		$eis_dev_status["price_sell"]=$prices["sell"][$dayweek][$hour];
 		// update cost counters
-		$eis_dev_status["total_sell"] = $eis_dev_status["total_sell"] + $cenergy*sell_price($timestamp);
-		$eis_dev_status["total_buy"] = $eis_dev_status["total_buy"] + $genergy*buy_price($timestamp);
+		$eis_dev_status["total_sell"] = $eis_dev_status["total_sell"] + $cenergy*$eis_dev_status["price_buy"];
+		$eis_dev_status["total_buy"] = $eis_dev_status["total_buy"] + $genergy*$eis_dev_status["price_sell"];
 		// check connection overload and overgen
 		if ($eis_dev_status["gpower".$p]>$eis_dev_conf["gpower".$p]) $eis_dev_status["gridstatus"]="overload";
 		if ($eis_dev_status["cpower".$p]>$eis_dev_conf["cpower".$p]) $eis_dev_status["gridstatus"]="overgen";
@@ -93,7 +128,7 @@ function eis_device_exec($calldata) {
 	$callparam=$calldata["param"];
 	switch ($calldata["cmd"]) {
 		case "getpriceinfo":
-			$returnmsg=eis_ok_msg(array("priceinfo"=>array("two_prices"=>"Italian bioraria","constant_rate"=>"constant rate price plan")));
+			$returnmsg=eis_ok_msg(array("priceinfo"=>$eis_dev_conf["priceIDs"]));
 			break;
 		default:
 			// manage unknown command
@@ -119,16 +154,7 @@ function eis_device_signal($calldata) {
 
 //////// more device specific functions 
 
-// get sell price at the current time with the selected plan
-function sell_price($timestamp) {
-	global $eis_conf,$eis_dev_status,$eis_dev_conf;
-	return $eis_dev_status["price_sell"];
-}
 
-// get buy price at the current time with the selected plan
-function buy_price($timestamp) {
-	global $eis_conf,$eis_dev_status,$eis_dev_conf;
-	return $eis_dev_status["price_buy"];
-}
+
 
 ?>

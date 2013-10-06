@@ -37,19 +37,19 @@ function eis_device_simulate($callparam) {
 	$timestep=$eis_dev_status["sim_step"]*60;
 	if (!array_key_exists("windspeed",$callparam["meteo"])) return eis_error("system:parameterMissing","meteo['windspeed']");
 	if (!array_key_exists("cpower",$callparam)) return eis_error("system:parameterMissing","cpower");
-	// update energy in kWh
-	for ($p=1;$p<4;$p++)
-		$eis_dev_status["genergy$p"] = $eis_dev_status["genergy$p"] + $eis_dev_status["gpower$p"]*$timestep/3600000.0;
-	// update generated power	
+	// compute generated power	
 	if ($eis_dev_status["power"]) {
 		$gpower=intval(compute_power($callparam["meteo"]["windspeed"])/3);
 		for ($p=1;$p<4;$p++) 
-			// check if is off-grid
-			if ($eis_dev_status["sim_type"]=="off-grid" and $callparam["cpower"][$p]<$gpower)
+			// check if is off-grid or on protected line
+			if (($eis_dev_status["sim_type"]=="off-grid" or $eis_dev_status["gline"]=="protected") and $callparam["cpower"][$p]<$gpower)
 				$eis_dev_status["gpower$p"]=$callparam["cpower"][$p];
 			else
 				$eis_dev_status["gpower$p"]=$gpower;
 	}
+	// update energy in kWh
+	for ($p=1;$p<4;$p++)
+		$eis_dev_status["genergy$p"] = $eis_dev_status["genergy$p"] + $eis_dev_status["gpower$p"]*$timestep/3600000.0;
 	return true;
 }
 
@@ -105,7 +105,7 @@ function eis_device_signal($calldata) {
 
 //////// more device specific functions 
 
-// calcola le potenze sulle singole fasi in base alla velocità del vento
+// compute total wind power
 function compute_power($speed) {
 	global $eis_conf,$eis_dev_status,$eis_dev_conf;
 	// return to m/s from km/h

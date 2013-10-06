@@ -5,11 +5,13 @@
 // available into global var: $eis_dev_conf
 // upf, May2013
 
+/////////// mandatory configuration fields ///////////
+
 // deviceID (the name of the directory where it is) and implementation version
 $eis_dev_conf["ID"]=basename(substr(dirname(__FILE__),0,-8));
-$eis_dev_conf["version"]="0.0.1";		
+$eis_dev_conf["version"]="0.0.2";		
 $eis_dev_conf["date"]="2013-06-13";		
-$eis_dev_conf["author"]="vitofusco";
+$eis_dev_conf["author"]="group2 revised by upf";
 
 // device dir absolute path (terminated without /)
 $eis_dev_conf["path"]=$eis_conf["path"]."/devices/".$eis_dev_conf["ID"];
@@ -19,24 +21,31 @@ $eis_dev_conf["tablepfx"]=str_replace(".","_",$eis_dev_conf["ID"]);
 
 // realtime interface communication port (on 127.0.0.1)
 // must be different for each device installed in a host
-$eis_dev_conf["ifport"]=40200;
+$eis_dev_conf["ifport"]=40300;
 
 // device class (functional type, see documentation)
-$eis_dev_conf["class"]="wind_plant";
+$eis_dev_conf["class"]="pv_plant";
 
 // device short description
-$eis_dev_conf["description"]="Solener 2,5 kW wind turbine";
+$eis_dev_conf["description"]="a generic 19.8kW pv plant";
 
 // device electrical type: "load", "generator" or "load&gen"
 $eis_dev_conf["type"]="generator";
 
 
-// max consumed power for each phase (in watts)
-// set to zero for unused phase(s)
-// 20kW / 3 = 6666.66... watts = 6667
-$eis_dev_conf["gpower1"]=2640;
-$eis_dev_conf["gpower2"]=0;
-$eis_dev_conf["gpower3"]=0;
+/////////// available configurations ///////////
+
+// config = specific configuration description
+// gpowerX = max generated power for phase X (in watts)
+$eis_dev_conf["configurations"]=array(
+	// default configuration
+	"default" => array (
+		"config"=>"default configuration",
+		"gpower1"=>6600,
+		"gpower2"=>6600,
+		"gpower3"=>6600,
+	)
+);
 
 
 // -- device initial status array -- //

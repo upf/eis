@@ -27,20 +27,22 @@ foreach ($devinfo as $d=>$i) {
 	if ($i["class"]=="grid") $grid=$d;
 	if ($i["class"]=="auxiliary_generator") $auxgen=$d;
 	if ($i["class"]=="electrical_storage") $storage=$d;
-	if ($i["cline"]=="protected" or $i["gline"]=="protected") $protected[]=$d;
-	if ($i["cline"]=="unprotected" or $i["gline"]=="unprotected") $unprotected[]=$d;
+	if (($i["cline"]=="protected" or $i["gline"]=="protected") and $i["class"]!="electrical_storage") $protected[]=$d;
+	if (($i["cline"]=="unprotected" or $i["gline"]=="unprotected")
+		and !in_array($i["class"],array("electrical_storage","grid","auxiliary_generator"))) $unprotected[]=$d;
 }
 
 // initialize simulation
 if (isset($_REQUEST["init"])) {
 	$initerr=array();
 	$inputpar=array("timestamp"=>$eis_dev_status["sim_startime"],"sim_meteo"=>$eis_dev_status["sim_meteo"],
-		"sim_price"=>$eis_dev_status["sim_price"],"sim_id"=>$eis_dev_status["sim_id"],"sim_type"=>$eis_dev_status["sim_type"],
+		"sim_id"=>$eis_dev_status["sim_id"],"sim_type"=>$eis_dev_status["sim_type"],"sim_endtime"=>$eis_dev_status["sim_endtime"],
 		"sim_step"=>$eis_dev_status["sim_step"]);
 	reset($devinfo);
 	foreach ($devinfo as $d=>$i) {
 		$inputpar["cline"]=$i["cline"];
 		$inputpar["gline"]=$i["gline"];
+		$inputpar["configID"]=$i["configID"];
 		if (!eis_dev_call($d."@".$devinfo[$d]["host"],"exec","init",$inputpar,$outpar)) $initerr[$d]="$eis_error -- $eis_errmsg";
 	}
 	if (sizeof($initerr)) {
@@ -58,11 +60,18 @@ if (isset($_REQUEST["simulate"])) {
 	$ucpower=array(1=>0,2=>0,3=>0);	// unprotected line load powers
 	$ugpower=array(1=>0,2=>0,3=>0);	// unprotected line gen powers
 	$timestamp=$_REQUEST["simulate"];
+
+	// call user model device if exists
+	// *********** to be implemented **********
+
+	// call energy manager device if exists
+	// *********** to be implemented **********
+
 	// call meteo device
    	$fields=array("temperature","humidity","windspeed","winddir","pressure","radiation");
    	$i=$devinfo[$meteo];
 	if (eis_dev_call($meteo."@".$i["host"],"exec","simulate",array("timestamp"=>$timestamp),$outpar)) {
-		foreach ($fields as $f) $devstatus["meteo"][$f]=$outpar[$f];
+		foreach ($fields as $f) $devstatus["meteo"][$f]=number_format($outpar[$f],2);
 		$devstatus["meteo"]["windspeed"]=$devstatus["meteo"]["windspeed"]*3.6; // Km/h from m/s
 		$dg=$devstatus["meteo"]["winddir"];
 		if ($dg>338 or $dg<=23) $dir='N';
@@ -73,14 +82,14 @@ if (isset($_REQUEST["simulate"])) {
 		if ($dg>203 and $dg<=248) $dir='SW';
 		if ($dg>248 and $dg<=293) $dir='W';
 		if ($dg>293 and $dg<=338) $dir='NW';
-		$devstatus["meteo"]["winddir"]=$dir." (".$devstatus["meteo"]["winddir"].")";
+		$devstatus["meteo"]["winddir"]=$dir." (".number_format($devstatus["meteo"]["winddir"],1).")";
 	}
    	if ($eis_error) $devstatus["meteo"]["error"]="<font color='red'>".$eis_error."</font>"; else $devstatus["meteo"]["error"]="-----";
 	if ($eis_error) { print json_encode($devstatus); die(); } // if meteo fails, skip simulation step
 	// call all load devices on protected line
     foreach ($protected as $d) {
  	   	$i=$devinfo[$d];
-	   	if ($i["type"]=="generator" or $i["class"]=="storage" or $i["type"]=="virtual") continue;
+	   	if ($i["type"]=="generator" or $i["class"]=="electrical_storage" or $i["type"]=="virtual") continue;
 		if (eis_dev_call($d."@".$i["host"],"exec","simulate",
 					array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"blackout"=>$eis_dev_status["pl_blackout"]),$r)) {
 			$devstatus[$d]["cpower"]=$r["cpower1"].",".$r["cpower2"].",".$r["cpower3"];
@@ -93,7 +102,7 @@ if (isset($_REQUEST["simulate"])) {
     reset($protected);
     foreach ($protected as $d) {
 	   	$i=$devinfo[$d];
-	   	if ($i["type"]=="load" or $i["class"]=="storage" or $i["type"]=="virtual") continue;
+	   	if ($i["type"]=="load" or $i["class"]=="electrical_storage" or $i["type"]=="virtual") continue;
 		if (eis_dev_call($d."@".$i["host"],"exec","simulate",
 				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$pcpower,"blackout"=>$eis_dev_status["pl_blackout"]),$r)) {
 			$devstatus[$d]["gpower"]=$r["gpower1"].",".$r["gpower2"].",".$r["gpower3"];
@@ -106,10 +115,23 @@ if (isset($_REQUEST["simulate"])) {
 	if (isset($storage)) {
 	   	$i=$devinfo[$storage];
 		if (eis_dev_call($storage."@".$i["host"],"exec","simulate",
-				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$pcpower,"gpower"=>$pgpower),$r)) {
-			$devstatus["storage"]=$r;
-			for ($p=1; $p<4; $p++) if (array_key_exists("cpower".$p,$devstatus[$d])) $ucpower[$p]+=$devstatus[$d]["cpower".$p];
-		}
+				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$pcpower,"gpower"=>$pgpower,"blackout"=>$eis_dev_status["ul_blackout"]),$r)) {
+			$devstatus["storage"]["gpower"]=$r["gpower1"].",".$r["gpower2"].",".$r["gpower3"];
+			$devstatus["storage"]["genergy"]=number_format($r["genergy1"],4).",".number_format($r["genergy2"],4).",".number_format($r["genergy3"],4);
+	 		$devstatus["storage"]["cpower"]=$r["cpower1"].",".$r["cpower2"].",".$r["cpower3"];
+			$devstatus["storage"]["cenergy"]=number_format($r["cenergy1"],4).",".number_format($r["cenergy2"],4).",".number_format($r["cenergy3"],4);
+			$devstatus["storage"]["benergy"]=number_format($r["benergy"],2);
+			$devstatus["storage"]["bcpower"]=$r["bcpower"];
+			$devstatus["storage"]["bgpower"]=$r["bgpower"];
+			$devstatus["storage"]["bcenergy"]=number_format($r["bcenergy"],4);
+			$devstatus["storage"]["bgenergy"]=number_format($r["bgenergy"],4);
+			$devstatus["storage"]["bypass"]=$r["bypass"];
+			if ($r["chargebattery"]) $devstatus["storage"]["chargebattery"]="yes"; else $devstatus["storage"]["chargebattery"]="no";
+			if ($r["glinestatus"]=="ok") $c="green"; else $c="red";
+			$devstatus["storage"]["glinestatus"]="<font color='$c'>".$r["glinestatus"]."</font>";
+			if ($r["glinestatus"]=="ok") $eis_dev_status["pl_blackout"]=false; else $eis_dev_status["pl_blackout"]=true;
+			for ($p=1; $p<4; $p++) if (array_key_exists("cpower".$p,$r)) $ucpower[$p]+=$r["cpower".$p];
+  		}
    		if ($eis_error) $devstatus["storage"]["error"]="<font color='red'>".$eis_error."</font>"; else $devstatus["storage"]["error"]="-----";
     }
 	// call all load devices on unprotected line
@@ -160,18 +182,19 @@ if (isset($_REQUEST["simulate"])) {
 		if ($eis_error) $devstatus["grid"]["error"]="<font color='red'>".$eis_error."</font>"; else $devstatus["grid"]["error"]="-----";
     }
 	// call aux generator device if exists
-	if (isset($auxdev)) {
- 	   	$i=$devinfo[$auxdev];
-		if (eis_dev_call($auxdev."@".$i["host"],"exec","simulate",
+	if (isset($auxgen)) {
+ 	   	$i=$devinfo[$auxgen];
+		if (eis_dev_call($auxgen."@".$i["host"],"exec","simulate",
 				array("timestamp"=>$timestamp,"meteo"=>$devstatus["meteo"],"cpower"=>$ucpower,"gpower"=>$ugpower),$r)) {
-			$devstatus["auxdev"]=$r;
-			if ($r["auxgenstatus"]!="ok") $eis_dev_status["ul_blackout"]=true; else $eis_dev_status["ul_blackout"]=false;
+			$devstatus["auxgen"]["gpower"]=$r["gpower1"].",".$r["gpower2"].",".$r["gpower3"];
+			$devstatus["auxgen"]["genergy"]=number_format($r["genergy1"],4).",".number_format($r["genergy2"],4).",".number_format($r["genergy3"],4);
+			$devstatus["auxgen"]["total_cost"]=$r["total_cost"];
+			if ($r["glinestatus"]=="ok") $c="green"; else $c="red";
+			$devstatus["auxgen"]["glinestatus"]="<font color='$c'>".$r["glinestatus"]."</font>";
+			if ($r["glinestatus"]!="ok") $eis_dev_status["ul_blackout"]=true; else $eis_dev_status["ul_blackout"]=false;
 		}
    		if ($eis_error) $devstatus["auxgen"]["error"]="<font color='red'>".$eis_error."</font>"; else $devstatus["auxgen"]["error"]="-----";
     }
-	// call energy manager device if exists
-	// *********** to be implemented **********
-
     // return update status
 	print json_encode($devstatus);
 	// save status
@@ -185,7 +208,7 @@ if (isset($_REQUEST["simulate"])) {
 if (!eis_save_status()) die ($eis_error." --> ".$eis_errmsg);
 
 // print page headers
-print eis_page_header("eis master run","",null);
+print eis_page_header("eis master run","");
 print "<b>run simulation:</b> <i>".$eis_dev_status["sim_name"]." (id=$sim_id, type=".$eis_dev_status["sim_type"].")</i><br>";
 
 // control panel
@@ -210,7 +233,7 @@ if (isset($grid)) {
 	$rows=array(array("grid_price_buy","grid_gpower","grid_genergy","grid_total_buy",
 			    		"grid_price_sell","grid_cpower","grid_cenergy","grid_total_sell","grid_gridstatus","grid_error"));
 	$link="<a href='".eis_dev_geturl($grid,$devinfo[$grid]["host"])."' target='_blank'>$grid</a>";
-	print_datatable("Grid data <i>($link using ".$eis_dev_status["sim_price"]." prices)</i>",$headers,$rows);
+	print_datatable("Grid data <i>($link using ".$devinfo[$grid]["configID"]." configuration)</i>",$headers,$rows);
 	$headers=array("Total grid power (W)","Total grid energy (kWh)","Total cost");
 	$rows=array(array("grid_tpower","grid_tenergy","grid_total_money"));
 	print_datatable("",$headers,$rows);	
@@ -218,55 +241,52 @@ if (isset($grid)) {
 
 // aux generator device data table (if exists)
 if (isset($auxgen)) {
-	$headers=array("","Price (EU)","Power (W)","Energy (KWh)","Cost (EU)");
-	$rows=array(
-		array("@Buy","auxgen_bprice","auxgen_gpower","auxgen_genergy","auxgen_bcost"),
-		array("@Total","@ ","auxgen_tpower","auxgen_tenergy","grid_tcost")
-	);
+	$headers=array("Power (W)","Energy (KWh)","Total Cost (EU)","Connection","Error");
+	$rows=array(array("auxgen_gpower","auxgen_genergy","auxgen_total_cost","auxgen_glinestatus","auxgen_error"));
 	$link="<a href='".eis_dev_geturl($auxgen,$devinfo[$auxgen]["host"])."' target='_blank'>$auxgen</a>";
-	print_datatable("Auxiliary generator data <i>($link)</i>",$headers,$rows);
+	print_datatable("Auxiliary generator data <i>($link using ".$devinfo[$auxgen]["configID"]." configuration)</i>",$headers,$rows);
 }
 
 // unprotected line device data table (if exists)
-if (sizeof($unprotected)) {
-	$headers=array("Device","Host","Class","Type","cPower (W)","cEnergy (KWh)","gPower (W)","gEnergy (KWh)","Error");
+if (sizeof($unprotected)>0) {
+	$headers=array("Device","Host","Class","Type","Configuration","cPower (W)","cEnergy (KWh)","gPower (W)","gEnergy (KWh)","Error");
 	$rows=array();
 	foreach ($unprotected as $d)
-		if (!in_array($devinfo[$d]["class"],array("storage","grid","auxiliary_generator","master","meteo_station")))
+		if (!in_array($devinfo[$d]["class"],array("electrical_storage","grid","auxiliary_generator","master","meteo_station")))
 			$rows[]=array("@<a href='".eis_dev_geturl($d,$devinfo[$d]["host"])."' target='_blank'>$d</a>","@".$devinfo[$d]["host"],
-				"@".$devinfo[$d]["class"],"@".$devinfo[$d]["type"],$d."_cpower",$d."_cenergy",$d."_gpower",$d."_genergy",$d."_error");
+				"@".$devinfo[$d]["class"],"@".$devinfo[$d]["type"],"@".$devinfo[$d]["configID"],$d."_cpower",$d."_cenergy",$d."_gpower",$d."_genergy",$d."_error");
 	print_datatable("Unprotected Line data",$headers,$rows);
 }
 
 // storage device data table (if exists)
 if (isset($storage)) {
-	$headers=array("","Assorbed power (W)","Assorbed Energy (KWh)","Generated power (W)","Generated Energy (KWh)","Bypass (%)","Charge (%)");
+	$headers=array("","cPower (W)","cEnergy (kWh)","gPower (W)","gEnergy (kWh)");
 	$rows=array(
-		array("@Protected line","@ ","@ ","storage_cpower","storage_cenergy","@ ","@ "),
-		array("@Unprotected line","storage_cpower","storage_cenergy","@ ","@ ","storage_bupass","@ "),
-		array("@Battery","storage_bcpower","storage_bcenergy","storage_bgpower","storage_gcenergy","storage_bbpass","storage_bcharge")
+		array("@Lines","storage_cpower","storage_cenergy","storage_gpower","storage_genergy"),
+		array("@Battery","storage_bcpower","storage_bcenergy","storage_bgpower","storage_bgenergy")
 	);
 	$link="<a href='".eis_dev_geturl($storage,$devinfo[$storage]["host"])."' target='_blank'>$storage</a>";
-	print_datatable("Storage data <i>($link)</i>",$headers,$rows);
+	print_datatable("Storage data <i>($link using ".$devinfo[$storage]["configID"]." configuration)</i>",$headers,$rows);
+	$headers=array("Bypass (%)","Charge (%)","Charging","Protected Line status","Error");
+	$rows=array(array("storage_bypass","storage_benergy","storage_chargebattery","storage_glinestatus","storage_error"));
+	print_datatable("",$headers,$rows);	
 }
 
 // protected line device data table (if exists)
 if (sizeof($protected)) {
-	$headers=array("Device","Host","Class","Type","cPower (W)","cEnergy (KWh)","gPower (W)","gEnergy (KWh)","Error");
+	$headers=array("Device","Host","Class","Type","Configuration","cPower (W)","cEnergy (KWh)","gPower (W)","gEnergy (KWh)","Error");
 	$rows=array();
 	foreach ($protected as $d)
-		if (!in_array($devinfo[$d]["class"],array("storage","grid","auxiliary_generator","master","meteo_station")))
+		if (!in_array($devinfo[$d]["class"],array("electrical_storage","grid","auxiliary_generator","master","meteo_station")))
 			$rows[]=array("@<a href='".eis_dev_geturl($d,$devinfo[$d]["host"])."' target='_blank'>$d</a>","@".$devinfo[$d]["host"],
-				"@".$devinfo[$d]["class"],"@".$devinfo[$d]["type"],$d."_cpower",$d."_cenergy",$d."_gpower",$d."_genergy",$d."_error");
+				"@".$devinfo[$d]["class"],"@".$devinfo[$d]["type"],"@".$devinfo[$d]["configID"],$d."_cpower",$d."_cenergy",$d."_gpower",$d."_genergy",$d."_error");
 	print_datatable("Protected Line data",$headers,$rows);
 }
-
-
 
 // utility function for printing a table with its title, headers and fields
 // if a field starts with @ it is treated as data, else it is treated as an ID of an empty div 
 function print_datatable($title,$headers,$rows) {
-	print "<br><b>$title</b><br>\n";
+	if ($title!="") print "<br><b>$title</b><br>\n";
 	print "	<table border=1><tr>";
 	foreach ($headers as $f) print "<th>&nbsp $f &nbsp</th>";
 	print "</tr>\n";
@@ -373,9 +393,10 @@ function print_datatable($title,$headers,$rows) {
 
     // return a formatted data string froma UNIX timestamp
     function getfdate(timestamp) {
-        var d = new Date(timestamp*1000);
+    	var day=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
         var m=new Array("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec");
-        return d.getDate()+"-"+m[d.getMonth()]+"-"+d.getFullYear()+" &nbsp "+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
+        var d = new Date(timestamp*1000);
+        return day[d.getDay()]+" &nbsp "+d.getDate()+"-"+m[d.getMonth()]+"-"+d.getFullYear()+" &nbsp "+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
     }
 
 

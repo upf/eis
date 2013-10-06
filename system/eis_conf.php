@@ -5,8 +5,8 @@
 // available into global var: $eis_conf
 
 // version, date and author of this eis system
-$eis_conf["version"]="0.2.1";
-$eis_conf["date"]="2013-07-10";
+$eis_conf["version"]="0.2.2";
+$eis_conf["date"]="2013-07-27";
 $eis_conf["author"]="upf";
 
 // eis folder absolute path (terminated without /)

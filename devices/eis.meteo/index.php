@@ -15,51 +15,25 @@ $port=$eis_dev_conf["ifport"];
 $thispage="http://".$_SERVER["SERVER_NAME"].$_SERVER["SCRIPT_NAME"];
 $thisdevice=$eis_dev_conf["ID"]."@".$_SERVER["SERVER_NAME"];
 
-// process callbacks from page
-if (eis_callback("enable")) {
-    eis_dev_call($thisdevice,"signal",$_REQUEST["enable"],array(),$outputpar);
-    die();
-}
-if (eis_callback("power")) {
-    eis_dev_call($thisdevice,"signal",$_REQUEST["power"],array(),$outputpar);
-    die();
-}
-
 // create a realtime interface handler
-// requires the Javascript function "eis_updatepage(status)" be defined into the page
+// if custom widgets are defined, requires the Javascript function "eis_updatepage(status)" be defined into the page
 eis_realtime_handler();
 
-// print page headers
+// use widgets
+eis_realtime_widgets();
+
+
+//////////// page creation ////////////
+
+// output page
 $headers='
-    <script src="../lib/RGraph/libraries/RGraph.common.core.js" ></script>
-    <script src="../lib/RGraph/libraries/RGraph.common.dynamic.js" ></script>
-    <script src="../lib/RGraph/libraries/RGraph.gauge.js" ></script>
-    <script src="../lib/RGraph/libraries/RGraph.led.js" ></script>
     <script src="../lib/RGraph/libraries/RGraph.thermometer.js" ></script>
-    <script src="../lib/RGraph/libraries/RGraph.vprogress.js" ></script>
-    <script src="../lib/RGraph/libraries/RGraph.odo.js" ></script>
-    <!--[if lt IE 9]><script src="../excanvas/excanvas.js"></script><![endif]-->
-    <script src="../lib/RGraph/libraries/RGraph.common.effects.js" ></script>
-    <script src="../lib/jquery.min.js" ></script>
-    <style>
-        td {text-align: center}
-    </style>';
-print eis_page_header($eis_dev_conf["ID"],$headers,"picture.jpg");
-
-// timestamp field
-print "<h3><div id='timestamp'></div></h3>\n";     
-
-// enable/disable buttons
-if ($eis_dev_status["enabled"]) $enabled="../lib/red-on.png"; else $enabled="../lib/red-off.png"; 
-print "<img id='enabled' align='middle' height=25 width=25 src='$enabled'>
-        <input type='button' value='enable' onClick=\"eis_callback('enable','enable');\" />
-        <input type='button' value='disable' onClick=\"eis_callback('enable','disable');\" /> &nbsp &nbsp &nbsp &nbsp\n";
-
-// power on/off buttons
-if ($eis_dev_status["power"]) $power="../lib/green-on.png"; else $power="../lib/green-off.png"; 
-print "&nbsp &nbsp &nbsp &nbsp <img id='power' align='middle' height=25 width=25 src='$power'> 
-        <input type='button' value='power on' onClick=\"eis_callback('power','poweron');\" />
-        <input type='button' value='power off' onClick=\"eis_callback('power','poweroff');\" />\n";
+    <script src="../lib/RGraph/libraries/RGraph.odo.js" ></script>';
+print eis_page_header($eis_dev_conf["ID"],$headers);
+// output some useful widgets
+print "<h3>".eis_widget_timestamp("Simulation time: ")."</h3>";
+print eis_widget_enable().eis_spaces(6).eis_widget_poweron().eis_spaces(6);
+print "<b><i>".eis_widget_text("Meteo data set: ","sim_meteo").eis_spaces(3)."</i></b><a href=plotmeteo.php>show</a><br><br>\n";
 
 // canvas
 print "<br><br><table><tr><td><canvas id='temperature' width=80 height=350>[No canvas support]</canvas>&nbsp &nbsp </td>\n";
@@ -74,9 +48,6 @@ print "<td><canvas id='winddir' width=250 height=250>[No canvas support]</canvas
 <script>
  
     //////// fill page for the first time
-
-    // simulation time
-    document.getElementById('timestamp').innerHTML = 'simulation time: '+eis_date(<?php print $eis_dev_status["timestamp"];?>);
 
     // temperature widget
     var thermometer = new RGraph.Thermometer('temperature', -10,50,<?php print $eis_dev_status["temperature"];?>);
@@ -159,17 +130,6 @@ print "<td><canvas id='winddir' width=250 height=250>[No canvas support]</canvas
         var i,s,c;
         for (i in status)
             switch(i) {
-                case "timestamp":
-                    document.getElementById('timestamp').innerHTML = "simulation time: "+eis_date(status[i]);
-                    break;
-                case "enabled":
-                    if (status[i]) s="../lib/red-on.png"; else s="../lib/red-off.png"; 
-                    document.getElementById('enabled').src = s;
-                    break;
-                case "power":
-                    if (status[i]) s="../lib/green-on.png"; else s="../lib/green-off.png"; 
-                    document.getElementById('power').src = s;
-                    break;
                  case "temperature":
                     thermometer.value=status[i];
                     RGraph.Effects.Thermometer.Grow(thermometer);                    

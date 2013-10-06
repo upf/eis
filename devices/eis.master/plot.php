@@ -33,7 +33,7 @@ $headers='
     <script src="../lib/jquery.min.js"></script>
     ';
 // output standard eis page 
-print eis_page_header($eis_dev_conf["ID"],$headers,"");
+print eis_page_header($eis_dev_conf["ID"],$headers);
 
 // plot
 print "<canvas id='plot' width=800 height=550>[No canvas support]</canvas>\n";
